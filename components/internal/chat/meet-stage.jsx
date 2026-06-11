@@ -29,7 +29,7 @@ function ParticipantTile({ person, cameraOn = true, muted = false, speaking = fa
     <div
       className={cn(
         "group relative overflow-hidden rounded-xl border bg-[#0e0e0e] transition-all",
-        speaking ? "border-[#525252] ring-1 ring-[#3a3a3a]" : "border-[#262626]",
+        speaking ? "border-[#525252] ring-1 ring-ring" : "border-[#262626]",
         big ? "min-h-[260px]" : "min-h-[140px]",
       )}
     >
@@ -42,7 +42,7 @@ function ParticipantTile({ person, cameraOn = true, muted = false, speaking = fa
           }}
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#161616]">
+        <div className="absolute inset-0 flex items-center justify-center bg-background">
           <UserAvatar person={person} size={big ? "xl" : "lg"} />
         </div>
       )}
@@ -72,7 +72,7 @@ function ControlButton({ icon: Icon, label, active, danger, onClick }) {
         danger
           ? "border-transparent bg-red-600 text-white hover:bg-red-500"
           : active
-            ? "border-[#333] bg-[#2a2a2a] text-white hover:bg-[#333]"
+            ? "border-[#333] bg-surface-hover text-white hover:bg-[#333]"
             : "border-transparent bg-[#3a1d1d] text-red-300 hover:bg-[#4a2424]",
       )}
     >
@@ -110,21 +110,21 @@ export function MeetStage({ title = "Meeting", participants = [], kind = "video"
         embedded ? "h-full rounded-2xl border border-[#262626] overflow-hidden" : "fixed inset-0 z-50",
       )}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-[#1f1f1f] px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-400">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
           </span>
           <div>
             <h2 className="text-sm font-semibold text-white">{title}</h2>
-            <p className="text-[11px] text-[#737373]">{elapsed} · {everyone.length} in call</p>
+            <p className="text-[11px] text-text-secondary">{elapsed} · {everyone.length} in call</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button className="hidden h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] hover:bg-[#1f1f1f] hover:text-white sm:flex" title="Participants">
+          <button className="hidden h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-card hover:text-foreground sm:flex" title="Participants">
             <Users className="h-[18px] w-[18px]" />
           </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] hover:bg-[#1f1f1f] hover:text-white" title="Fullscreen">
+          <button className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-card hover:text-foreground" title="Fullscreen">
             <Maximize2 className="h-[18px] w-[18px]" />
           </button>
         </div>
@@ -146,15 +146,15 @@ export function MeetStage({ title = "Meeting", participants = [], kind = "video"
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 border-t border-[#1f1f1f] px-4 py-3 sm:gap-3">
+      <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3 sm:gap-3">
         <ControlButton icon={micOn ? Mic : MicOff} label={micOn ? "Mute" : "Unmute"} active={micOn} onClick={() => setMicOn((v) => !v)} />
         <ControlButton icon={camOn ? VideoIcon : VideoOff} label={camOn ? "Stop video" : "Start video"} active={camOn} onClick={() => setCamOn((v) => !v)} />
         <ControlButton icon={MonitorUp} label="Share screen" active={sharing} onClick={() => setSharing((v) => !v)} />
         <ControlButton icon={Hand} label="Raise hand" active={handRaised} onClick={() => setHandRaised((v) => !v)} />
-        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-[#2a2a2a] text-white hover:bg-[#333] sm:flex" title="Chat">
+        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-white hover:bg-[#333] sm:flex" title="Chat">
           <MessageSquare className="h-[18px] w-[18px]" />
         </button>
-        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-[#2a2a2a] text-white hover:bg-[#333] sm:flex" title="More">
+        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-white hover:bg-[#333] sm:flex" title="More">
           <MoreHorizontal className="h-[18px] w-[18px]" />
         </button>
         <button

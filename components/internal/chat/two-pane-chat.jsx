@@ -13,14 +13,14 @@ function EmptyThread({ variant }) {
   const Icon = variant === "channel" ? Hash : MessageSquare;
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-card text-muted-foreground">
         <Icon className="h-6 w-6" strokeWidth={1.8} />
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-[#e7e7e7]">
+        <p className="text-sm font-medium text-foreground">
           {variant === "channel" ? "No channel selected" : "No conversation selected"}
         </p>
-        <p className="max-w-xs text-xs text-[#737373]">
+        <p className="max-w-xs text-xs text-text-secondary">
           {variant === "channel"
             ? "Choose a channel from the list to jump back into the discussion."
             : "Choose a conversation from the list to start chatting."}

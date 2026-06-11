@@ -10,12 +10,12 @@ import { cn } from "@/lib/utils";
 
 function Row({ icon: Icon, title, subtitle, control }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[#2a2a2a] px-4 py-3.5 last:border-0">
+    <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3.5 last:border-0">
       <div className="flex min-w-0 items-center gap-3">
-        {Icon ? <Icon className="h-4 w-4 shrink-0 text-[#737373]" /> : null}
+        {Icon ? <Icon className="h-4 w-4 shrink-0 text-text-secondary" /> : null}
         <div className="min-w-0">
-          <p className="text-sm font-medium text-[#e7e7e7]">{title}</p>
-          {subtitle ? <p className="text-xs text-[#737373]">{subtitle}</p> : null}
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          {subtitle ? <p className="text-xs text-text-secondary">{subtitle}</p> : null}
         </div>
       </div>
       {control}
@@ -25,9 +25,9 @@ function Row({ icon: Icon, title, subtitle, control }) {
 
 function Card({ icon: Icon, title, children }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a]">
-      <div className="flex items-center gap-2 border-b border-[#2a2a2a] px-4 py-3">
-        <Icon className="h-4 w-4 text-[#a3a3a3]" />
+    <section className="overflow-hidden rounded-2xl border border-border bg-surface-subtle">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+        <Icon className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold text-white">{title}</h2>
       </div>
       <div>{children}</div>
@@ -60,9 +60,9 @@ export function SettingsScreen() {
 
         <Card icon={Palette} title="Appearance">
           <Row title="Theme" subtitle="How Geiger Chat looks to you" control={
-            <div className="flex items-center gap-1 rounded-lg border border-[#2a2a2a] bg-[#202020] p-1">
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-surface-card p-1">
               {THEMES.map((t) => (
-                <button key={t} onClick={() => setTheme(t)} className={cn("h-7 rounded-md px-2.5 text-xs font-medium transition-colors", theme === t ? "bg-[#2a2a2a] text-white" : "text-[#a3a3a3] hover:text-white")}>
+                <button key={t} onClick={() => setTheme(t)} className={cn("h-7 rounded-md px-2.5 text-xs font-medium transition-colors", theme === t ? "bg-surface-hover text-white" : "text-muted-foreground hover:text-foreground")}>
                   {t}
                 </button>
               ))}

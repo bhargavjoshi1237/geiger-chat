@@ -21,8 +21,8 @@ export function MessageGroup({ group }) {
       </div>
       <div className={cn("flex min-w-0 max-w-[78%] flex-col gap-1", isMe && "items-end")}>
         <div className={cn("flex items-baseline gap-2", isMe && "flex-row-reverse")}>
-          <span className="text-xs font-semibold text-[#e7e7e7]">{isMe ? "You" : author.name}</span>
-          <span className="text-[11px] text-[#6b6b6b]">{clockTime(first.minsAgo ?? 0)}</span>
+          <span className="text-xs font-semibold text-foreground">{isMe ? "You" : author.name}</span>
+          <span className="text-[11px] text-text-secondary">{clockTime(first.minsAgo ?? 0)}</span>
         </div>
         <div className={cn("flex flex-col gap-1", isMe && "items-end")}>
           {group.items.map((msg) => (
@@ -38,7 +38,7 @@ export function MessageGroup({ group }) {
                   "w-fit rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
                   isMe
                     ? "rounded-tr-md bg-[#e7e7e7] text-[#161616]"
-                    : "rounded-tl-md border border-[#2a2a2a] bg-[#202020] text-[#e7e7e7]",
+                    : "rounded-tl-md border border-border bg-surface-card text-foreground",
                 )}
               >
                 {msg.text}

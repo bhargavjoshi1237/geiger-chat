@@ -29,19 +29,19 @@ const faqs = [
 
 function FaqItem({ question, answer }) {
   return (
-    <details className="group border-b border-zinc-800 py-4">
-      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-sm font-medium text-zinc-200 transition-colors hover:text-white">
+    <details className="group border-b border-border py-4">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-sm font-medium text-foreground transition-colors hover:text-foreground">
         {question}
-        <span className="mt-0.5 text-zinc-500 transition-transform group-open:rotate-45">+</span>
+        <span className="mt-0.5 text-foreground0 transition-transform group-open:rotate-45">+</span>
       </summary>
-      <p className="pt-3 text-sm leading-6 text-zinc-400">{answer}</p>
+      <p className="pt-3 text-sm leading-6 text-muted-foreground">{answer}</p>
     </details>
   );
 }
 
 function Footer() {
   return (
-    <footer className="relative z-30 border-t border-zinc-800/50 bg-zinc-950 px-6 pb-8 pt-16">
+    <footer className="relative z-30 border-t border-border/50 bg-background px-6 pb-8 pt-16">
       <div className="mx-auto max-w-6xl">
         <div className="mb-12 grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="col-span-2">
@@ -51,29 +51,29 @@ function Footer() {
                 Geiger Studios
               </span>
             </div>
-            <p className="max-w-sm text-sm text-zinc-500">Built to Manage. Designed to Create.</p>
+            <p className="max-w-sm text-sm text-foreground0">Built to Manage. Designed to Create.</p>
           </div>
           <div>
-            <h4 className="mb-4 font-bold text-zinc-100">Product</h4>
-            <ul className="space-y-3 text-sm text-zinc-400">
-              <li><Link href="/home" className="transition-colors hover:text-zinc-100">Workspace</Link></li>
-              <li><Link href="#features" className="transition-colors hover:text-zinc-100">Features</Link></li>
+            <h4 className="mb-4 font-bold text-foreground">Product</h4>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li><Link href="/home" className="transition-colors hover:text-foreground">Workspace</Link></li>
+              <li><Link href="#features" className="transition-colors hover:text-foreground">Features</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="mb-4 font-bold text-zinc-100">Company</h4>
-            <ul className="space-y-3 text-sm text-zinc-400">
-              <li><Link href="#" className="transition-colors hover:text-zinc-100">About</Link></li>
-              <li><Link href="#" className="transition-colors hover:text-zinc-100">Contact</Link></li>
+            <h4 className="mb-4 font-bold text-foreground">Company</h4>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li><Link href="#" className="transition-colors hover:text-foreground">About</Link></li>
+              <li><Link href="#" className="transition-colors hover:text-foreground">Contact</Link></li>
             </ul>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-zinc-800/50 pt-8 text-sm text-zinc-500 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 text-sm text-foreground0 md:flex-row">
           <p>&copy; {new Date().getFullYear()} Geiger Studios. All rights reserved.</p>
         </div>
       </div>
       <div className="relative z-0 mt-10 flex justify-center">
-        <h1 className="pointer-events-none select-none text-[13vw] font-bold leading-none tracking-tight text-zinc-100/5">
+        <h1 className="pointer-events-none select-none text-[13vw] font-bold leading-none tracking-tight text-foreground/5">
           GEIGER STUDIO
         </h1>
       </div>
@@ -83,7 +83,7 @@ function Footer() {
 
 export default function ChatLandingPage() {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-zinc-950 font-sans text-zinc-100 selection:bg-indigo-500/30">
+    <div className="flex min-h-screen w-full flex-col bg-background font-sans text-foreground selection:bg-indigo-500/30">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(to_right,#80808030_1px,transparent_1px),linear-gradient(to_bottom,#80808030_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
       <SiteHeader productName="Chat" />
@@ -94,7 +94,7 @@ export default function ChatLandingPage() {
             <h1 className="mb-4 text-2xl font-semibold text-white sm:text-3xl">
               Team communication, simplified.
             </h1>
-            <p className="mb-6 max-w-xl text-sm text-zinc-400 sm:text-base">
+            <p className="mb-6 max-w-xl text-sm text-muted-foreground sm:text-base">
               Geiger Chat brings messaging, channels, file sharing, and calls into one workspace so your team stays connected without the noise.
             </p>
             <Link
@@ -113,10 +113,10 @@ export default function ChatLandingPage() {
 
         <section id="features" className="mx-auto grid w-full max-w-6xl gap-4 px-4 sm:px-6 md:grid-cols-3">
           {features.map(({ title, description, icon: Icon }) => (
-            <article key={title} className="rounded-sm border border-zinc-800 bg-[#191919] p-5">
-              <Icon className="mb-3 h-5 w-5 text-zinc-300" />
-              <h2 className="font-medium text-zinc-100">{title}</h2>
-              <p className="mt-2 text-sm text-zinc-400">{description}</p>
+            <article key={title} className="rounded-sm border border-border bg-[#191919] p-5">
+              <Icon className="mb-3 h-5 w-5 text-muted-foreground" />
+              <h2 className="font-medium text-foreground">{title}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{description}</p>
             </article>
           ))}
         </section>

@@ -36,11 +36,11 @@ function MobileSidebarHeader() {
               onError={(e) => {
                 e.currentTarget.style.display = "none";
                 e.currentTarget.parentElement.innerHTML =
-                  '<div class="w-2 h-2 bg-white rounded-full"></div>';
+                  '<div class="w-2 h-2 bg-foreground rounded-full"></div>';
               }}
             />
           </div>
-          <span className="text-white font-semibold text-sm truncate max-w-full">
+          <span className="text-foreground font-semibold text-sm truncate max-w-full">
             Chat
           </span>
         </div>

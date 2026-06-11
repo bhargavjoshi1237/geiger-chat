@@ -25,7 +25,7 @@ export default function LandingChatShowcase({ ctaHref = "/home", ctaLabel = "Ope
 
   return (
     <section
-      className="overflow-hidden rounded-2xl border border-zinc-800 bg-cover bg-center p-3 sm:rounded-3xl sm:p-6 md:p-8 xl:p-10"
+      className="overflow-hidden rounded-2xl border border-border bg-cover bg-center p-3 sm:rounded-3xl sm:p-6 md:p-8 xl:p-10"
       style={{ backgroundImage: `url('${bg}')` }}
     >
       <div className="flex flex-col gap-6 sm:gap-10">
@@ -33,7 +33,7 @@ export default function LandingChatShowcase({ ctaHref = "/home", ctaLabel = "Ope
           <h3 className="text-2xl font-semibold leading-tight text-white sm:text-3xl">
             Experience the full Geiger Chat interface in real time.
           </h3>
-          <p className="max-w-md text-sm text-zinc-300/90">
+          <p className="max-w-md text-sm text-muted-foreground/90">
             This playground runs locally on the page with real channels, messaging,
             presence, and a video meeting stage. Send a message, switch channels, or
             start a call. No save and no load, just pure exploration.
@@ -47,8 +47,8 @@ export default function LandingChatShowcase({ ctaHref = "/home", ctaLabel = "Ope
           </Link>
         </div>
 
-        <div className="relative rounded-2xl border border-zinc-700/80 bg-[#191919]/70 p-2 shadow-2xl backdrop-blur-md sm:p-3">
-          <div className="h-[600px] overflow-hidden rounded-xl border border-zinc-800 bg-[#161616] sm:h-[680px] lg:h-[760px]">
+        <div className="relative rounded-2xl border border-border-strong/80 bg-[#191919]/70 p-2 shadow-2xl backdrop-blur-md sm:p-3">
+          <div className="h-[600px] overflow-hidden rounded-xl border border-border bg-background sm:h-[680px] lg:h-[760px]">
             <ChatPlayground />
           </div>
         </div>

@@ -71,9 +71,9 @@ function CopyLinkRow({ value, label = "Copy link" }) {
   };
   return (
     <div className="flex items-center gap-2">
-      <div className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-[#333333] bg-[#161616] px-3">
-        <Link2 className="h-4 w-4 shrink-0 text-[#737373]" />
-        <span className="truncate text-sm text-[#d4d4d4]">{value}</span>
+      <div className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-background px-3">
+        <Link2 className="h-4 w-4 shrink-0 text-text-secondary" />
+        <span className="truncate text-sm text-muted-foreground">{value}</span>
       </div>
       <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={copy}>
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -94,7 +94,7 @@ function MediaToggle({ on, onIcon: OnIcon, offIcon: OffIcon, label, onToggle }) 
       className={cn(
         "flex h-11 w-11 items-center justify-center rounded-full border transition-colors",
         on
-          ? "border-[#333] bg-[#2a2a2a] text-white hover:bg-[#333]"
+          ? "border-[#333] bg-surface-hover text-white hover:bg-[#333]"
           : "border-transparent bg-[#3a1d1d] text-red-300 hover:bg-[#4a2424]",
       )}
     >
@@ -132,7 +132,7 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[min(512px,calc(100vw-32px))] gap-0 p-0">
-        <div className="border-b border-[#2a2a2a] p-5">
+        <div className="border-b border-border p-5">
           <DialogTitle>New meeting</DialogTitle>
           <DialogDescription className="mt-1">
             Invite people to join, or start instantly on your own.
@@ -142,12 +142,12 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
         <div className="max-h-[60vh] overflow-y-auto p-5 scrollbar-subtle">
           {/* Search people */}
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Add people by name"
-              className="h-9 w-full rounded-md border border-[#333333] bg-[#161616] pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-[#737373] focus:border-[#474747]"
+              className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-text-secondary focus:border-border-strong"
             />
           </div>
 
@@ -157,14 +157,14 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
               {invited.map((p) => (
                 <span
                   key={p.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#333333] bg-[#202020] py-1 pl-1 pr-2 text-sm text-[#e7e7e7]"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-card py-1 pl-1 pr-2 text-sm text-foreground"
                 >
                   <UserAvatar person={p} size="xs" />
                   {p.firstName}
                   <button
                     type="button"
                     onClick={() => remove(p.id)}
-                    className="flex h-4 w-4 items-center justify-center rounded-full text-[#737373] hover:bg-[#333] hover:text-white"
+                    className="flex h-4 w-4 items-center justify-center rounded-full text-text-secondary hover:bg-[#333] hover:text-foreground"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -175,12 +175,12 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
 
           {/* Suggestions */}
           <div className="mt-4">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#737373]">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
               {query.trim() ? "Results" : "Suggested"}
             </p>
             <ul className="flex flex-col">
               {suggestions.length === 0 ? (
-                <li className="py-2 text-sm text-[#737373]">No people to add.</li>
+                <li className="py-2 text-sm text-text-secondary">No people to add.</li>
               ) : (
                 suggestions.map((p) => {
                   const presence = PRESENCE[p.presence] || PRESENCE.offline;
@@ -193,13 +193,13 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
                       >
                         <UserAvatar person={p} size="md" showPresence />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm text-[#e7e7e7]">{p.name}</span>
-                          <span className="block truncate text-xs text-[#737373]">{p.role}</span>
+                          <span className="block truncate text-sm text-foreground">{p.name}</span>
+                          <span className="block truncate text-xs text-text-secondary">{p.role}</span>
                         </span>
                         <span className="text-xs" style={{ color: presence.color }}>
                           {presence.label}
                         </span>
-                        <Plus className="h-4 w-4 text-[#737373]" />
+                        <Plus className="h-4 w-4 text-text-secondary" />
                       </button>
                     </li>
                   );
@@ -209,15 +209,15 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
           </div>
 
           {/* Share link */}
-          <div className="mt-5 border-t border-[#2a2a2a] pt-5">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#737373]">
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
               Meeting link
             </p>
             <CopyLinkRow value={meetingLink(code)} />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-[#2a2a2a] p-4">
+        <div className="flex items-center justify-between gap-2 border-t border-border p-4">
           <Button variant="outline" size="sm" className="h-9" onClick={() => startWith([])}>
             Start instant
           </Button>
@@ -252,10 +252,10 @@ export function JoinConfirmDialog({ open, code, onOpenChange, onJoin }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[min(440px,calc(100vw-32px))] gap-0 p-0">
-        <div className="border-b border-[#2a2a2a] p-5">
+        <div className="border-b border-border p-5">
           <DialogTitle>Ready to join?</DialogTitle>
           <DialogDescription className="mt-1">
-            {code ? <>Meeting code <span className="font-mono text-[#d4d4d4]">{code}</span></> : "Check your camera and mic before joining."}
+            {code ? <>Meeting code <span className="font-mono text-muted-foreground">{code}</span></> : "Check your camera and mic before joining."}
           </DialogDescription>
         </div>
 
@@ -286,20 +286,20 @@ export function JoinConfirmDialog({ open, code, onOpenChange, onJoin }) {
           </div>
 
           {/* Who's in there */}
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-[#2a2a2a] bg-[#202020] px-4 py-3">
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface-card px-4 py-3">
             <AvatarStack people={participants} size="sm" max={4} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-[#e7e7e7]">
+              <p className="truncate text-sm text-foreground">
                 {host?.firstName} is hosting
               </p>
-              <p className="text-xs text-[#737373]">
+              <p className="text-xs text-text-secondary">
                 {participants.length} {participants.length === 1 ? "person" : "people"} in the call
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#2a2a2a] p-4">
+        <div className="flex items-center justify-end gap-2 border-t border-border p-4">
           <Button variant="outline" size="sm" className="h-9" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -340,27 +340,27 @@ function MiniCalendar({ selected, onSelect }) {
   }, [month]);
 
   return (
-    <div className="rounded-xl border border-[#2a2a2a] bg-[#161616] p-3">
+    <div className="rounded-xl border border-border bg-background p-3">
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
           onClick={() => setMonth((m) => subMonths(m, 1))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#a3a3a3] hover:bg-[#2a2a2a] hover:text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-hover hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-sm font-medium text-[#e7e7e7]">{format(month, "MMMM yyyy")}</span>
+        <span className="text-sm font-medium text-foreground">{format(month, "MMMM yyyy")}</span>
         <button
           type="button"
           onClick={() => setMonth((m) => addMonths(m, 1))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#a3a3a3] hover:bg-[#2a2a2a] hover:text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-hover hover:text-foreground"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
       <div className="mb-1 grid grid-cols-7 gap-1">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="flex h-7 items-center justify-center text-[11px] font-medium text-[#737373]">
+          <div key={d} className="flex h-7 items-center justify-center text-[11px] font-medium text-text-secondary">
             {d}
           </div>
         ))}
@@ -384,9 +384,9 @@ function MiniCalendar({ selected, onSelect }) {
                   : isPast
                     ? "text-[#3f3f3f]"
                     : inMonth
-                      ? "text-[#e7e7e7] hover:bg-[#2a2a2a]"
-                      : "text-[#525252] hover:bg-[#2a2a2a]",
-                !isSelected && isToday && "ring-1 ring-[#474747]",
+                      ? "text-foreground hover:bg-surface-hover"
+                      : "text-text-tertiary hover:bg-surface-hover",
+                !isSelected && isToday && "ring-1 ring-border-strong",
               )}
             >
               {format(day, "d")}
@@ -417,7 +417,7 @@ export function ScheduleDialog({ open, onOpenChange, defaultTitle = "" }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[min(480px,calc(100vw-32px))] gap-0 p-0">
-        <div className="border-b border-[#2a2a2a] p-5">
+        <div className="border-b border-border p-5">
           <DialogTitle>Schedule a meeting</DialogTitle>
           <DialogDescription className="mt-1">
             Pick a date and time, then share the link with your team.
@@ -426,37 +426,37 @@ export function ScheduleDialog({ open, onOpenChange, defaultTitle = "" }) {
 
         <div className="max-h-[64vh] space-y-4 overflow-y-auto p-5 scrollbar-subtle">
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[#737373]">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-secondary">
               Title
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Sprint Planning"
-              className="h-9 w-full rounded-md border border-[#333333] bg-[#161616] px-3 text-sm text-white outline-none transition-colors placeholder:text-[#737373] focus:border-[#474747]"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-white outline-none transition-colors placeholder:text-text-secondary focus:border-border-strong"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[#737373]">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-secondary">
               Date
             </label>
             <MiniCalendar selected={date} onSelect={setDate} />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[#737373]">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-secondary">
               Time
             </label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex h-9 w-full items-center gap-2 rounded-md border border-[#333333] bg-[#161616] px-3 text-sm text-[#e7e7e7] transition-colors hover:border-[#474747]"
+                  className="flex h-9 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground transition-colors hover:border-border-strong"
                 >
-                  <Clock className="h-4 w-4 text-[#737373]" />
+                  <Clock className="h-4 w-4 text-text-secondary" />
                   <span className="flex-1 text-left">{slotLabel}</span>
-                  <ChevronDown className="h-4 w-4 text-[#737373]" />
+                  <ChevronDown className="h-4 w-4 text-text-secondary" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="max-h-64 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto scrollbar-subtle">
@@ -471,14 +471,14 @@ export function ScheduleDialog({ open, onOpenChange, defaultTitle = "" }) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[#737373]">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-secondary">
               Meeting link
             </label>
             <CopyLinkRow value={meetingLink(code)} />
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#2a2a2a] p-4">
+        <div className="flex items-center justify-end gap-2 border-t border-border p-4">
           <Button variant="outline" size="sm" className="h-9" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

@@ -31,7 +31,7 @@ const PRESENCE_BADGE = {
   online: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   away: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   dnd: "bg-red-500/15 text-red-300 border-red-500/30",
-  offline: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
+  offline: "bg-zinc-500/15 text-muted-foreground border-zinc-500/30",
 };
 
 function lastActiveLabel(person) {
@@ -74,22 +74,22 @@ export function ContactsScreen({ onNavigate }) {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search people"
-                className="w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] py-[7px] pl-9 pr-4 text-sm text-[#e7e7e7] transition-colors placeholder:text-[#525252] focus:border-[#474747] focus:outline-none focus:ring-1 focus:ring-[#474747]"
+                className="w-full rounded-lg border border-border bg-surface-subtle py-[7px] pl-9 pr-4 text-sm text-foreground transition-colors placeholder:text-text-tertiary focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
             <SegmentedTabs tabs={FILTERS} value={filter} onChange={setFilter} className="self-start sm:self-auto" />
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#202020]">
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface-card">
           <Table>
             <TableHeader>
-              <TableRow className="border-[#2a2a2a] bg-[#1a1a1a]">
+              <TableRow className="border-border bg-surface-subtle">
                 <TableHead>Member</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
@@ -100,7 +100,7 @@ export function ContactsScreen({ onNavigate }) {
             <TableBody>
               {people.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="py-12 text-center text-sm text-[#737373]">
+                  <TableCell colSpan={5} className="py-12 text-center text-sm text-text-secondary">
                     No people match your search.
                   </TableCell>
                 </TableRow>
@@ -108,24 +108,24 @@ export function ContactsScreen({ onNavigate }) {
                 people.map((person) => {
                   const presence = PRESENCE[person.presence] || PRESENCE.offline;
                   return (
-                    <TableRow key={person.id} className="border-[#2a2a2a] hover:bg-[#242424]">
+                    <TableRow key={person.id} className="border-border hover:bg-surface-active">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <UserAvatar person={person} size="md" showPresence />
                           <div className="min-w-0">
-                            <div className="truncate text-sm font-medium text-[#ededed]">{person.name}</div>
-                            <div className="truncate text-xs text-[#737373]">{emailFor(person)}</div>
+                            <div className="truncate text-sm font-medium text-foreground">{person.name}</div>
+                            <div className="truncate text-xs text-text-secondary">{emailFor(person)}</div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm text-[#a3a3a3]">{person.role}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{person.role}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         <Badge className={cn("gap-1.5 border px-2 font-medium", PRESENCE_BADGE[person.presence])}>
                           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: presence.color }} />
                           {presence.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm text-[#a3a3a3]">{lastActiveLabel(person)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{lastActiveLabel(person)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
@@ -133,7 +133,7 @@ export function ContactsScreen({ onNavigate }) {
                             variant="ghost"
                             size="icon-sm"
                             title="Message"
-                            className="text-[#a3a3a3] hover:bg-[#252525] hover:text-white"
+                            className="text-muted-foreground hover:bg-surface-active hover:text-foreground"
                             onClick={() => onNavigate?.("Messages")}
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -143,7 +143,7 @@ export function ContactsScreen({ onNavigate }) {
                             variant="ghost"
                             size="icon-sm"
                             title="Audio call"
-                            className="text-[#a3a3a3] hover:bg-[#252525] hover:text-white"
+                            className="text-muted-foreground hover:bg-surface-active hover:text-foreground"
                             onClick={() => setCall({ person, kind: "audio" })}
                           >
                             <Phone className="h-4 w-4" />
@@ -153,7 +153,7 @@ export function ContactsScreen({ onNavigate }) {
                             variant="ghost"
                             size="icon-sm"
                             title="Video call"
-                            className="text-[#a3a3a3] hover:bg-[#252525] hover:text-white"
+                            className="text-muted-foreground hover:bg-surface-active hover:text-foreground"
                             onClick={() => setCall({ person, kind: "video" })}
                           >
                             <Video className="h-4 w-4" />

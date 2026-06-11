@@ -30,7 +30,7 @@ export function MessageActions({ msg, isMe }) {
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center gap-0.5 rounded-full border border-[#2a2a2a] bg-[#1a1a1a] p-0.5 opacity-0 shadow-sm transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100",
+        "flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-surface-subtle p-0.5 opacity-0 shadow-sm transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100",
         isMe ? "mr-1" : "ml-1",
       )}
     >
@@ -41,7 +41,7 @@ export function MessageActions({ msg, isMe }) {
               type="button"
               onClick={run}
               aria-label={label}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#a3a3a3] transition-colors hover:bg-[#2a2a2a] hover:text-white"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
             >
               <Icon className="h-3.5 w-3.5" />
             </button>

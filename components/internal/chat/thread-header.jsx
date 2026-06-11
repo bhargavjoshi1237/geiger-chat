@@ -15,7 +15,7 @@ function HeaderButton({ icon: Icon, title, onClick, className }) {
       onClick={onClick}
       title={title}
       className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] transition-colors hover:bg-[#2a2a2a] hover:text-white",
+        "flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground",
         className,
       )}
     >
@@ -34,20 +34,20 @@ export function ThreadHeader({ conversation, onStartCall, onBack, onClose }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[#2a2a2a] px-3 md:px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-3 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] transition-colors hover:bg-[#2a2a2a] hover:text-white md:hidden"
+            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground md:hidden"
             title="Back"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
         ) : null}
         {isChannel ? (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-card text-muted-foreground">
             <Hash className="h-[18px] w-[18px]" />
           </div>
         ) : (
@@ -58,9 +58,9 @@ export function ThreadHeader({ conversation, onStartCall, onBack, onClose }) {
             <h2 className="truncate text-sm font-semibold text-white">
               {isChannel ? conversation.name : person?.name}
             </h2>
-            {conversation.pinned ? <Pin className="h-3 w-3 shrink-0 text-[#737373]" /> : null}
+            {conversation.pinned ? <Pin className="h-3 w-3 shrink-0 text-text-secondary" /> : null}
           </div>
-          <p className="truncate text-xs text-[#737373]">
+          <p className="truncate text-xs text-text-secondary">
             {isChannel ? conversation.topic : presence?.label}
           </p>
         </div>

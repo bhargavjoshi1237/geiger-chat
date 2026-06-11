@@ -26,15 +26,15 @@ function untilLabel(mins) {
 /* ---------- containers ---------- */
 function StatCard({ icon: Icon, label, value, hint }) {
   return (
-    <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 transition-colors hover:border-[#474747]">
+    <div className="rounded-2xl border border-border bg-surface-subtle p-4 transition-colors hover:border-border-strong">
       <div className="flex items-start justify-between">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-card text-muted-foreground">
           <Icon className="h-[18px] w-[18px]" />
         </div>
-        {hint ? <span className="text-[11px] text-[#737373]">{hint}</span> : null}
+        {hint ? <span className="text-[11px] text-text-secondary">{hint}</span> : null}
       </div>
-      <div className="mt-3 text-2xl font-semibold leading-none text-[#e7e7e7]">{value}</div>
-      <div className="mt-1.5 text-xs text-[#737373]">{label}</div>
+      <div className="mt-3 text-2xl font-semibold leading-none text-foreground">{value}</div>
+      <div className="mt-1.5 text-xs text-text-secondary">{label}</div>
     </div>
   );
 }
@@ -42,14 +42,14 @@ function StatCard({ icon: Icon, label, value, hint }) {
 // One grouped section: a titled panel that visually contains its items.
 function Panel({ icon: Icon, title, hint, action, children, className }) {
   return (
-    <section className={cn("flex flex-col rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-5", className)}>
+    <section className={cn("flex flex-col rounded-2xl border border-border bg-surface-subtle p-5", className)}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface-card text-muted-foreground">
             <Icon className="h-4 w-4" />
           </div>
-          <h3 className="text-sm font-semibold text-[#e7e7e7]">{title}</h3>
-          {hint ? <span className="text-xs text-[#737373]">{hint}</span> : null}
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          {hint ? <span className="text-xs text-text-secondary">{hint}</span> : null}
         </div>
         {action}
       </div>
@@ -60,7 +60,7 @@ function Panel({ icon: Icon, title, hint, action, children, className }) {
 
 function HeaderLink({ label, onClick }) {
   return (
-    <button onClick={onClick} className="inline-flex items-center gap-1 text-xs text-[#737373] transition-colors hover:text-[#e7e7e7]">
+    <button onClick={onClick} className="inline-flex items-center gap-1 text-xs text-text-secondary transition-colors hover:text-foreground">
       {label} <ArrowRight className="h-3 w-3" />
     </button>
   );
@@ -76,35 +76,35 @@ function ConversationCard({ conversation, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col gap-2.5 rounded-xl bg-[#202020] p-3.5 text-left ring-1 ring-inset ring-transparent transition-colors hover:bg-[#242424] hover:ring-[#333]"
+      className="group flex flex-col gap-2.5 rounded-xl bg-surface-card p-3.5 text-left ring-1 ring-inset ring-transparent transition-colors hover:bg-surface-active hover:ring-[#333]"
     >
       <div className="flex items-center gap-2.5">
         {isChannel ? (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] text-[#a3a3a3]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-subtle text-muted-foreground">
             <Hash className="h-[18px] w-[18px]" />
           </div>
         ) : (
           <UserAvatar person={person} size="md" showPresence />
         )}
         <div className="min-w-0 flex-1">
-          <span className="truncate text-sm font-semibold text-[#ededed]">
+          <span className="truncate text-sm font-semibold text-foreground">
             {isChannel ? `#${conversation.name}` : person?.name}
           </span>
-          <p className="truncate text-[11px] text-[#737373]">{sub}</p>
+          <p className="truncate text-[11px] text-text-secondary">{sub}</p>
         </div>
         {conversation.unread ? (
           <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#e7e7e7] px-1.5 text-[11px] font-semibold text-[#161616]">
             {conversation.unread}
           </span>
         ) : (
-          <ArrowUpRight className="h-4 w-4 shrink-0 text-[#3a3a3a] transition-colors group-hover:text-[#a3a3a3]" />
+          <ArrowUpRight className="h-4 w-4 shrink-0 text-[#3a3a3a] transition-colors group-hover:text-muted-foreground" />
         )}
       </div>
-      <p className="line-clamp-2 min-h-[2rem] text-xs leading-relaxed text-[#909090]">
-        <span className="text-[#a3a3a3]">{previewAuthor(conversation)}</span>
+      <p className="line-clamp-2 min-h-[2rem] text-xs leading-relaxed text-muted-foreground">
+        <span className="text-muted-foreground">{previewAuthor(conversation)}</span>
         {lastMessagePreview(conversation)}
       </p>
-      <div className="flex items-center gap-1.5 text-[11px] text-[#6b6b6b]">
+      <div className="flex items-center gap-1.5 text-[11px] text-text-secondary">
         <Clock className="h-3 w-3" />
         {fromNow(conversation.lastActivity)} ago
       </div>
@@ -185,13 +185,13 @@ export function OverviewScreen({ onNavigate }) {
             action={<HeaderLink label="Calls" onClick={() => onNavigate?.("Calls")} />}
           >
             {/* Up-next hero */}
-            <div className="relative overflow-hidden rounded-xl bg-[#202020] p-4">
+            <div className="relative overflow-hidden rounded-xl bg-surface-card p-4">
               <span className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#e7e7e7] to-[#5a5a5a]" />
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#737373]">Up next</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">Up next</span>
                   <h4 className="mt-1 truncate text-base font-semibold text-white">{nextMeeting.title}</h4>
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-[#a3a3a3]">
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> {untilLabel(nextMeeting.inMins)}
                   </p>
                 </div>
@@ -213,14 +213,14 @@ export function OverviewScreen({ onNavigate }) {
                   <button
                     key={mt.id}
                     onClick={() => setMeeting({ title: mt.title, participants: people })}
-                    className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-[#202020]"
+                    className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-surface-card"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-card text-muted-foreground">
                       <CalendarClock className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[#e7e7e7]">{mt.title}</p>
-                      <p className="text-xs text-[#737373]">{untilLabel(mt.inMins)}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{mt.title}</p>
+                      <p className="text-xs text-text-secondary">{untilLabel(mt.inMins)}</p>
                     </div>
                     <AvatarStack people={people} max={3} />
                   </button>

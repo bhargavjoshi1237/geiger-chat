@@ -140,7 +140,7 @@ export function ChatPlayground() {
   return (
     <div
       ref={setContainer}
-      className="relative flex h-full flex-col overflow-hidden bg-[#161616]"
+      className="relative flex h-full flex-col overflow-hidden bg-background"
       style={{ transform: "translateZ(0)" }}
     >
       <PortalContainerProvider container={container}>
@@ -149,7 +149,7 @@ export function ChatPlayground() {
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-[#e7e7e7] text-[11px] font-bold text-[#161616]">G</div>
             <span className="text-sm font-semibold text-white">Geiger Chat</span>
-            <span className="hidden rounded-full bg-[#222] px-2 py-0.5 text-[10px] font-medium text-[#a3a3a3] sm:inline">
+            <span className="hidden rounded-full bg-[#222] px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
               Playground
             </span>
           </div>

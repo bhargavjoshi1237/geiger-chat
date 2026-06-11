@@ -23,7 +23,7 @@ export function ScreenContainer({ children, className, secondary = false, fill =
   const Wrapper = secondary ? SecondaryScreenWrapper : MainScreenWrapper;
   return (
     <ScreenScroll>
-      <Wrapper className={cn("flex flex-col gap-7 space-y-0 text-[#e7e7e7]", fill && "min-h-full", className)}>
+      <Wrapper className={cn("flex flex-col gap-7 space-y-0 text-foreground", fill && "min-h-full", className)}>
         {children}
       </Wrapper>
     </ScreenScroll>
@@ -34,10 +34,10 @@ export function ScreenContainer({ children, className, secondary = false, fill =
 // the right, separated from content by a bottom border.
 export function ScreenHeader({ title, description, actions }) {
   return (
-    <div className="flex flex-col gap-4 border-b border-[#2a2a2a] pb-6 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-center lg:justify-between">
       <div>
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#e7e7e7]">{title}</h1>
-        {description ? <p className="text-[#a3a3a3] text-sm mt-1">{description}</p> : null}
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
+        {description ? <p className="text-muted-foreground text-sm mt-1">{description}</p> : null}
       </div>
       {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
     </div>
@@ -47,7 +47,7 @@ export function ScreenHeader({ title, description, actions }) {
 export function SectionTitle({ children, action }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <h3 className="font-medium text-[#e7e7e7]">{children}</h3>
+      <h3 className="font-medium text-foreground">{children}</h3>
       {action}
     </div>
   );
@@ -58,4 +58,4 @@ export function SectionTitle({ children, action }) {
 export const btnPrimary =
   "inline-flex h-9 items-center gap-2 rounded-lg bg-[#e7e7e7] px-4 text-sm font-semibold text-[#161616] transition-colors hover:bg-white disabled:opacity-40";
 export const btnSecondary =
-  "inline-flex h-9 items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#202020] px-4 text-sm font-medium text-[#a3a3a3] transition-colors hover:border-[#474747] hover:text-[#e7e7e7] disabled:opacity-40";
+  "inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground disabled:opacity-40";

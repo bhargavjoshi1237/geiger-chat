@@ -30,7 +30,7 @@ function ActionButton({ icon: Icon, label, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-1 flex-col items-center gap-1.5 rounded-xl border border-[#2a2a2a] bg-[#202020] py-3 text-[#a3a3a3] transition-colors hover:border-[#474747] hover:text-white"
+      className="flex flex-1 flex-col items-center gap-1.5 rounded-xl border border-border bg-surface-card py-3 text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
     >
       <Icon className="h-[18px] w-[18px]" />
       <span className="text-xs font-medium">{label}</span>
@@ -41,16 +41,16 @@ function ActionButton({ icon: Icon, label, onClick }) {
 function DetailRow({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center gap-3 px-5 py-2.5">
-      <Icon className="h-4 w-4 shrink-0 text-[#737373]" />
-      <span className="w-24 shrink-0 text-xs text-[#737373]">{label}</span>
-      <span className="min-w-0 flex-1 truncate text-sm text-[#e7e7e7]">{value}</span>
+      <Icon className="h-4 w-4 shrink-0 text-text-secondary" />
+      <span className="w-24 shrink-0 text-xs text-text-secondary">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{value}</span>
     </div>
   );
 }
 
 function SectionLabel({ children }) {
   return (
-    <p className="px-5 pb-1 pt-4 text-xs font-medium uppercase tracking-wider text-[#737373]">
+    <p className="px-5 pb-1 pt-4 text-xs font-medium uppercase tracking-wider text-text-secondary">
       {children}
     </p>
   );
@@ -63,11 +63,11 @@ function MemberRow({ person }) {
     <div className="flex items-center gap-3 px-5 py-2">
       <UserAvatar person={person} size="md" showPresence />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-[#e7e7e7]">
+        <p className="truncate text-sm text-foreground">
           {person.name}
-          {isMe ? <span className="text-[#737373]"> (you)</span> : null}
+          {isMe ? <span className="text-text-secondary"> (you)</span> : null}
         </p>
-        <p className="truncate text-xs text-[#737373]">{person.role}</p>
+        <p className="truncate text-xs text-text-secondary">{person.role}</p>
       </div>
       <span className="shrink-0 text-xs" style={{ color: presence.color }}>
         {presence.label}
@@ -92,11 +92,11 @@ export function DetailsSheet({ conversation, open, onOpenChange, onStartCall }) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full gap-0 border-l border-[#2a2a2a] bg-[#1a1a1a] p-0 text-[#e7e7e7] sm:max-w-sm">
-        <SheetHeader className="gap-0 border-b border-[#2a2a2a] p-5">
+      <SheetContent className="w-full gap-0 border-l border-border bg-surface-subtle p-0 text-foreground sm:max-w-sm">
+        <SheetHeader className="gap-0 border-b border-border p-5">
           <div className="flex flex-col items-center text-center">
             {isChannel ? (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-surface-card text-muted-foreground">
                 <Hash className="h-7 w-7" />
               </div>
             ) : (
@@ -151,8 +151,8 @@ export function DetailsSheet({ conversation, open, onOpenChange, onStartCall }) 
                   className="h-4 w-4 shrink-0 rounded-full"
                   style={{ backgroundColor: presence?.color }}
                 />
-                <span className="w-24 shrink-0 text-xs text-[#737373]">Status</span>
-                <span className={cn("min-w-0 flex-1 truncate text-sm text-[#e7e7e7]")}>
+                <span className="w-24 shrink-0 text-xs text-text-secondary">Status</span>
+                <span className={cn("min-w-0 flex-1 truncate text-sm text-foreground")}>
                   {presence?.label}
                 </span>
               </div>

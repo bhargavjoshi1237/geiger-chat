@@ -40,8 +40,8 @@ export function NotificationItem({
     }
   }, [notification.extra]);
 
-  const bgColor = notification.bg_color || notification.bgColor || "bg-[#2a2a2a]";
-  const iconColor = notification.icon_color || notification.iconColor || "text-[#737373]";
+  const bgColor = notification.bg_color || notification.bgColor || "bg-surface-hover";
+  const iconColor = notification.icon_color || notification.iconColor || "text-text-secondary";
   const isUnread = !notification.read;
 
   return (
@@ -50,8 +50,8 @@ export function NotificationItem({
       className={`
         group relative flex items-start gap-3 p-4 rounded-2xl border transition-all duration-200 cursor-pointer
         ${isUnread
-          ? "bg-[#1f1f1f] border-[#2d2d2d] hover:border-[#404040]"
-          : "bg-[#181818] border-transparent hover:bg-[#1a1a1a] hover:border-[#2a2a2a]"}
+          ? "bg-surface-card border-[#2d2d2d] hover:border-[#404040]"
+          : "bg-surface-card border-transparent hover:bg-surface-subtle hover:border-border"}
       `}
     >
 
@@ -61,22 +61,22 @@ export function NotificationItem({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-3 mb-1">
-          <h3 className={`text-[13px] font-medium truncate ${isUnread ? "text-white" : "text-[#c0c0c0]"}`}>
+          <h3 className={`text-[13px] font-medium truncate ${isUnread ? "text-white" : "text-muted-foreground"}`}>
             {notification.title}
           </h3>
-          <span className="text-[11px] text-[#666666] whitespace-nowrap shrink-0">
+          <span className="text-[11px] text-text-secondary whitespace-nowrap shrink-0">
             {formattedTime}
           </span>
         </div>
 
-        <p className={`text-[12px] leading-relaxed ${isUnread ? "text-[#a0a0a0]" : "text-[#707070]"} line-clamp-2`}>
+        <p className={`text-[12px] leading-relaxed ${isUnread ? "text-muted-foreground" : "text-text-secondary"} line-clamp-2`}>
           {notification.description}
         </p>
 
         {extraContent && (
           <div className="mt-3">
             {extraContent.type === "comment" && (
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-[12px] text-[#909090] leading-relaxed">
+              <div className="bg-surface-subtle border border-border rounded-lg p-3 text-[12px] text-muted-foreground leading-relaxed">
                 {extraContent.text}
               </div>
             )}
@@ -84,15 +84,15 @@ export function NotificationItem({
             {extraContent.type === "file" && extraContent.files?.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-2.5 border border-[#2a2a2a] rounded-lg bg-[#1a1a1a] mt-2"
+                className="flex items-center justify-between p-2.5 border border-border rounded-lg bg-surface-subtle mt-2"
               >
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-7 h-7 rounded flex items-center justify-center bg-[#222222] text-[#808080] text-[10px] font-medium">
+                  <div className="w-7 h-7 rounded flex items-center justify-center bg-surface-card text-text-secondary text-[10px] font-medium">
                     {f.name.split('.').pop().toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[12px] text-[#c0c0c0] truncate">{f.name}</div>
-                    <div className="text-[10px] text-[#666666]">{f.size}</div>
+                    <div className="text-[12px] text-muted-foreground truncate">{f.name}</div>
+                    <div className="text-[10px] text-text-secondary">{f.size}</div>
                   </div>
                 </div>
               </div>
@@ -100,7 +100,7 @@ export function NotificationItem({
 
             {extraContent.type === "actions" && (
               <div className="flex items-center gap-2 mt-2.5">
-                <Button className="px-3 py-1.5 rounded-lg border border-[#333333] text-[11px] font-medium text-[#909090] hover:bg-[#252525] hover:text-white transition-colors">
+                <Button className="px-3 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:bg-surface-active hover:text-foreground transition-colors">
                   {extraContent.options?.[0] || "Decline"}
                 </Button>
                 <Button className="px-3 py-1.5 rounded-lg bg-white text-[11px] font-medium text-black hover:bg-gray-200 transition-colors">
@@ -112,7 +112,7 @@ export function NotificationItem({
         )}
 
         <div className="mt-3">
-          <span className="text-[9px] uppercase font-semibold tracking-wider text-[#666666] bg-[#1f1f1f] px-2 py-1 rounded-md border border-[#2a2a2a]">
+          <span className="text-[9px] uppercase font-semibold tracking-wider text-text-secondary bg-surface-card px-2 py-1 rounded-md border border-border">
             {notification.type}
           </span>
         </div>
@@ -120,13 +120,13 @@ export function NotificationItem({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-          <Button className="p-1.5 rounded-lg text-[#666666] hover:text-white hover:bg-[#2a2a2a] transition-colors opacity-0 group-hover:opacity-100">
+          <Button className="p-1.5 rounded-lg text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors opacity-0 group-hover:opacity-100">
             <MoreVertical className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-[160px] bg-[#1a1a1a] border-[#2a2a2a] text-[#c0c0c0]"
+          className="w-[160px] bg-surface-subtle border-border text-muted-foreground"
           onClick={(e) => e.stopPropagation()}
         >
           {isUnread && (

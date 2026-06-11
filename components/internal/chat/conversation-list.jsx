@@ -22,14 +22,14 @@ function ConversationRow({ conversation, active, onSelect, variant }) {
         onClick={() => onSelect(conversation.id)}
         className={cn(
           "group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors",
-          active ? "bg-[#242424]" : "hover:bg-[#202020]",
+          active ? "bg-surface-active" : "hover:bg-surface-card",
         )}
       >
         {isChannel ? (
           <div
             className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-[#a3a3a3]",
-              active ? "border-[#333] bg-[#262626]" : "border-[#2a2a2a] bg-[#202020]",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-muted-foreground",
+              active ? "border-[#333] bg-[#262626]" : "border-border bg-surface-card",
             )}
           >
             <Hash className="h-[18px] w-[18px]" />
@@ -40,13 +40,13 @@ function ConversationRow({ conversation, active, onSelect, variant }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <span className={cn("truncate text-sm", active || conversation.unread ? "font-semibold text-white" : "font-medium text-[#e7e7e7]")}>
+            <span className={cn("truncate text-sm", active || conversation.unread ? "font-semibold text-white" : "font-medium text-foreground")}>
               {isChannel ? `#${title}` : title}
             </span>
-            <span className="shrink-0 text-[11px] text-[#6b6b6b]">{fromNow(conversation.lastActivity)}</span>
+            <span className="shrink-0 text-[11px] text-text-secondary">{fromNow(conversation.lastActivity)}</span>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-xs text-[#737373]">
+            <span className="truncate text-xs text-text-secondary">
               <span className="text-[#8a8a8a]">{previewAuthor(conversation)}</span>
               {lastMessagePreview(conversation)}
             </span>
@@ -87,7 +87,7 @@ export function ConversationList({
   const rest = filtered.filter((c) => !c.pinned);
 
   return (
-    <div className="flex h-full w-full flex-col border-r border-[#2a2a2a] md:w-80 lg:w-[336px]">
+    <div className="flex h-full w-full flex-col border-r border-border md:w-80 lg:w-[336px]">
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-4">
         <h1 className="text-base font-semibold text-white">{title}</h1>
         {variant === "channel" ? (
@@ -98,26 +98,26 @@ export function ConversationList({
       </div>
 
       <div className="px-3 pb-2">
-        <div className="flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-2.5 transition-colors focus-within:border-[#474747]">
-          <Search className="h-4 w-4 text-[#6b6b6b]" />
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-subtle px-2.5 transition-colors focus-within:border-border-strong">
+          <Search className="h-4 w-4 text-text-secondary" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={variant === "channel" ? "Search channels" : "Search messages"}
-            className="h-9 flex-1 bg-transparent text-sm text-[#e7e7e7] placeholder:text-[#6b6b6b] focus:outline-none"
+            className="h-9 flex-1 bg-transparent text-sm text-foreground placeholder:text-text-secondary focus:outline-none"
           />
         </div>
       </div>
 
       <div className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-3 scrollbar-subtle">
         {pinned.length ? (
-          <p className="px-2 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-[#6b6b6b]">Pinned</p>
+          <p className="px-2 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-text-secondary">Pinned</p>
         ) : null}
         {pinned.map((c) => (
           <ConversationRow key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} variant={variant} />
         ))}
         {pinned.length ? (
-          <p className="px-2 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-[#6b6b6b]">
+          <p className="px-2 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-text-secondary">
             {variant === "channel" ? "All channels" : "Recent"}
           </p>
         ) : null}
@@ -125,7 +125,7 @@ export function ConversationList({
           <ConversationRow key={c.id} conversation={c} active={c.id === activeId} onSelect={onSelect} variant={variant} />
         ))}
         {filtered.length === 0 ? (
-          <p className="px-3 py-8 text-center text-sm text-[#6b6b6b]">No conversations found.</p>
+          <p className="px-3 py-8 text-center text-sm text-text-secondary">No conversations found.</p>
         ) : null}
       </div>
     </div>

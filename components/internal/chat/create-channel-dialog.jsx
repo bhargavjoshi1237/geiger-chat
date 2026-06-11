@@ -42,7 +42,7 @@ export function CreateChannelDialog() {
         <button
           type="button"
           title="Create channel"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] transition-colors hover:bg-[#2a2a2a] hover:text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
         >
           <Plus className="h-[18px] w-[18px]" />
         </button>
@@ -54,26 +54,26 @@ export function CreateChannelDialog() {
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#a3a3a3]">Name</label>
-            <div className="flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#202020] px-2.5 transition-colors focus-within:border-[#474747]">
-              <Hash className="h-4 w-4 text-[#6b6b6b]" />
+            <label className="text-xs font-medium text-muted-foreground">Name</label>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-card px-2.5 transition-colors focus-within:border-border-strong">
+              <Hash className="h-4 w-4 text-text-secondary" />
               <input
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && create()}
                 placeholder="e.g. marketing"
-                className="h-9 flex-1 bg-transparent text-sm text-[#e7e7e7] placeholder:text-[#6b6b6b] focus:outline-none"
+                className="h-9 flex-1 bg-transparent text-sm text-foreground placeholder:text-text-secondary focus:outline-none"
               />
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#a3a3a3]">Topic <span className="text-[#6b6b6b]">(optional)</span></label>
+            <label className="text-xs font-medium text-muted-foreground">Topic <span className="text-text-secondary">(optional)</span></label>
             <input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="What's this channel about?"
-              className="h-9 w-full rounded-lg border border-[#2a2a2a] bg-[#202020] px-2.5 text-sm text-[#e7e7e7] placeholder:text-[#6b6b6b] transition-colors focus:border-[#474747] focus:outline-none"
+              className="h-9 w-full rounded-lg border border-border bg-surface-card px-2.5 text-sm text-foreground placeholder:text-text-secondary transition-colors focus:border-border-strong focus:outline-none"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -87,13 +87,13 @@ export function CreateChannelDialog() {
                   onClick={() => setVisibility(o.key)}
                   className={cn(
                     "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors",
-                    selected ? "border-[#474747] bg-[#242424]" : "border-[#2a2a2a] bg-[#202020] hover:border-[#3a3a3a]",
+                    selected ? "border-border-strong bg-surface-active" : "border-border bg-surface-card hover:border-border-strong",
                   )}
                 >
-                  <span className="flex items-center gap-2 text-sm font-medium text-[#e7e7e7]">
-                    <Icon className="h-4 w-4 text-[#a3a3a3]" /> {o.label}
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Icon className="h-4 w-4 text-muted-foreground" /> {o.label}
                   </span>
-                  <span className="text-xs text-[#737373]">{o.hint}</span>
+                  <span className="text-xs text-text-secondary">{o.hint}</span>
                 </button>
               );
             })}
@@ -103,7 +103,7 @@ export function CreateChannelDialog() {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="inline-flex h-9 items-center rounded-lg border border-[#2a2a2a] bg-[#202020] px-4 text-sm font-medium text-[#a3a3a3] transition-colors hover:border-[#474747] hover:text-[#e7e7e7]"
+            className="inline-flex h-9 items-center rounded-lg border border-border bg-surface-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
           >
             Cancel
           </button>

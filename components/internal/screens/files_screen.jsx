@@ -60,23 +60,23 @@ export function FilesScreen() {
 
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex w-full max-w-sm items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-2.5 transition-colors focus-within:border-[#474747]">
-            <Search className="h-4 w-4 text-[#6b6b6b]" />
+          <div className="flex w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-surface-subtle px-2.5 transition-colors focus-within:border-border-strong">
+            <Search className="h-4 w-4 text-text-secondary" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search files"
-              className="h-9 flex-1 bg-transparent text-sm text-[#e7e7e7] placeholder:text-[#6b6b6b] focus:outline-none"
+              className="h-9 flex-1 bg-transparent text-sm text-foreground placeholder:text-text-secondary focus:outline-none"
             />
           </div>
-          <div className="flex items-center gap-1 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-surface-subtle p-1">
             {TYPES.map((t) => (
               <button
                 key={t.key}
                 onClick={() => setType(t.key)}
                 className={cn(
                   "h-7 rounded-md px-3 text-xs font-medium transition-colors",
-                  type === t.key ? "bg-[#2a2a2a] text-white" : "text-[#a3a3a3] hover:text-white",
+                  type === t.key ? "bg-surface-hover text-white" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {t.label}
@@ -85,7 +85,7 @@ export function FilesScreen() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#202020]">
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface-card">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -106,24 +106,24 @@ export function FilesScreen() {
                 <TableRow key={f.id} className="group">
                   <TableCell>
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] text-[#a3a3a3]">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-subtle text-muted-foreground">
                         <Icon className="h-[18px] w-[18px]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[#e7e7e7]">{f.name}</p>
-                        <p className="truncate text-xs text-[#737373]">{owner.firstName} · {fromNow(f.minsAgo)} ago</p>
+                        <p className="truncate text-sm font-medium text-foreground">{f.name}</p>
+                        <p className="truncate text-xs text-text-secondary">{owner.firstName} · {fromNow(f.minsAgo)} ago</p>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden text-xs text-[#a3a3a3] md:table-cell">{mt.label}</TableCell>
-                  <TableCell className="hidden max-w-[160px] truncate text-xs text-[#a3a3a3] md:table-cell">{source}</TableCell>
-                  <TableCell className="hidden text-xs text-[#a3a3a3] md:table-cell">{f.size}</TableCell>
+                  <TableCell className="hidden text-xs text-muted-foreground md:table-cell">{mt.label}</TableCell>
+                  <TableCell className="hidden max-w-[160px] truncate text-xs text-muted-foreground md:table-cell">{source}</TableCell>
+                  <TableCell className="hidden text-xs text-muted-foreground md:table-cell">{f.size}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] opacity-0 transition-all hover:bg-[#2a2a2a] hover:text-white group-hover:opacity-100" title="Download">
+                      <button className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all hover:bg-surface-hover hover:text-foreground group-hover:opacity-100" title="Download">
                         <Download className="h-4 w-4" />
                       </button>
-                      <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] transition-colors hover:bg-[#2a2a2a] hover:text-white" title="More">
+                      <button className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground" title="More">
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                     </div>
@@ -133,7 +133,7 @@ export function FilesScreen() {
             })}
           </TableBody>
         </Table>
-        {files.length === 0 ? <p className="py-14 text-center text-sm text-[#6b6b6b]">No files found.</p> : null}
+        {files.length === 0 ? <p className="py-14 text-center text-sm text-text-secondary">No files found.</p> : null}
         </div>
       </div>
     </ScreenContainer>

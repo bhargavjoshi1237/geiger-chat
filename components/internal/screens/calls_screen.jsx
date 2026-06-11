@@ -26,12 +26,12 @@ import { cn } from "@/lib/utils";
 
 function ActionCard({ icon: Icon, title, subtitle, onClick, children }) {
   return (
-    <div className="flex flex-col rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6 transition-colors hover:border-[#474747]">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#202020] text-[#a3a3a3]">
+    <div className="flex flex-col rounded-2xl border border-border bg-surface-subtle p-6 transition-colors hover:border-border-strong">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-card text-muted-foreground">
         <Icon className="h-5 w-5" />
       </div>
-      <p className="mt-4 text-sm font-medium text-[#e7e7e7]">{title}</p>
-      <p className="mt-1 text-xs text-[#737373]">{subtitle}</p>
+      <p className="mt-4 text-sm font-medium text-foreground">{title}</p>
+      <p className="mt-1 text-xs text-text-secondary">{subtitle}</p>
       {children ? <div className="mt-4">{children}</div> : (
         <button onClick={onClick} className="mt-4 inline-flex h-8 w-fit items-center gap-1.5 rounded-lg bg-[#e7e7e7] px-3 text-xs font-semibold text-[#161616] transition-colors hover:bg-white">
           Start <ArrowRight className="h-3 w-3" />
@@ -43,8 +43,8 @@ function ActionCard({ icon: Icon, title, subtitle, onClick, children }) {
 
 const DIRECTION_META = {
   missed: { icon: PhoneMissed, label: "Missed", className: "text-red-400" },
-  incoming: { icon: PhoneIncoming, label: "Incoming", className: "text-[#a3a3a3]" },
-  outgoing: { icon: PhoneOutgoing, label: "Outgoing", className: "text-[#a3a3a3]" },
+  incoming: { icon: PhoneIncoming, label: "Incoming", className: "text-muted-foreground" },
+  outgoing: { icon: PhoneOutgoing, label: "Outgoing", className: "text-muted-foreground" },
 };
 
 function CallTableRow({ call, onCallBack, onAction }) {
@@ -62,8 +62,8 @@ function CallTableRow({ call, onCallBack, onAction }) {
         <div className="flex min-w-0 items-center gap-3">
           <UserAvatar person={people[0]} size="md" />
           <div className="min-w-0">
-            <p className={cn("truncate text-sm font-medium", call.missed ? "text-red-400" : "text-[#e7e7e7]")}>{call.title}</p>
-            <p className="truncate text-xs text-[#737373]">{people.map((p) => p.firstName).join(", ")}</p>
+            <p className={cn("truncate text-sm font-medium", call.missed ? "text-red-400" : "text-foreground")}>{call.title}</p>
+            <p className="truncate text-xs text-text-secondary">{people.map((p) => p.firstName).join(", ")}</p>
           </div>
         </div>
       </TableCell>
@@ -73,17 +73,17 @@ function CallTableRow({ call, onCallBack, onAction }) {
         </span>
       </TableCell>
       <TableCell>
-        <span className="inline-flex items-center gap-1.5 text-xs text-[#a3a3a3]">
-          <KindIcon className="h-3.5 w-3.5 text-[#6b6b6b]" /> {call.kind === "video" ? "Video" : "Audio"}
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <KindIcon className="h-3.5 w-3.5 text-text-secondary" /> {call.kind === "video" ? "Video" : "Audio"}
         </span>
       </TableCell>
-      <TableCell className="text-xs text-[#a3a3a3]">{call.missed ? "—" : durationLabel(call.durationMins)}</TableCell>
-      <TableCell className="text-xs text-[#a3a3a3]">{fromNow(call.minsAgo)} ago</TableCell>
+      <TableCell className="text-xs text-muted-foreground">{call.missed ? "—" : durationLabel(call.durationMins)}</TableCell>
+      <TableCell className="text-xs text-muted-foreground">{fromNow(call.minsAgo)} ago</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
           <button
             onClick={() => onCallBack(call)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] opacity-0 transition-all hover:bg-[#2a2a2a] hover:text-white group-hover:opacity-100"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all hover:bg-surface-hover hover:text-foreground group-hover:opacity-100"
             title="Call back"
           >
             <Phone className="h-4 w-4" />
@@ -91,7 +91,7 @@ function CallTableRow({ call, onCallBack, onAction }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[#a3a3a3] transition-colors hover:bg-[#2a2a2a] hover:text-white data-[state=open]:bg-[#2a2a2a] data-[state=open]:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground data-[state=open]:bg-surface-hover data-[state=open]:text-foreground"
                 title="More"
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -201,7 +201,7 @@ export function CallsScreen() {
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && code.trim()) openJoin(); }}
                 placeholder="abc-defg-hij"
-                className="h-8 w-full rounded-lg border border-[#2a2a2a] bg-[#202020] px-2.5 text-xs text-[#e7e7e7] placeholder:text-[#525252] focus:border-[#474747] focus:outline-none"
+                className="h-8 w-full rounded-lg border border-border bg-surface-card px-2.5 text-xs text-foreground placeholder:text-text-tertiary focus:border-border-strong focus:outline-none"
               />
               <button
                 onClick={openJoin}
@@ -215,9 +215,9 @@ export function CallsScreen() {
           <ActionCard icon={Calendar} title="Schedule" subtitle="Plan a meeting and share the invite with your team." onClick={() => openSchedule()} />
         </div>
 
-        <section className="overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#202020]">
-          <div className="flex items-center justify-between border-b border-[#2a2a2a] px-6 py-4">
-            <h3 className="font-medium text-[#e7e7e7]">Recent calls</h3>
+        <section className="overflow-hidden rounded-2xl border border-border bg-surface-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <h3 className="font-medium text-foreground">Recent calls</h3>
           </div>
           <Table>
             <TableHeader>

@@ -30,7 +30,7 @@ export function UserAvatar({ person, size = "md", showPresence = false, classNam
     <div className={cn("relative inline-flex shrink-0", className)}>
       <span
         className={cn(
-          "flex items-center justify-center rounded-full bg-[#333333] font-semibold uppercase text-[#e7e7e7] ring-1 ring-[#474747]",
+          "flex items-center justify-center rounded-full bg-surface-strong font-semibold uppercase text-foreground ring-1 ring-border-strong",
           SIZES[size],
         )}
         aria-hidden
@@ -40,7 +40,7 @@ export function UserAvatar({ person, size = "md", showPresence = false, classNam
       {showPresence ? (
         <span
           className={cn(
-            "absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-[#161616]",
+            "absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-background",
             DOT_SIZES[size],
           )}
           style={{ backgroundColor: presence.color }}
@@ -65,7 +65,7 @@ export function AvatarStack({ people = [], size = "sm", max = 4 }) {
         ))}
       </div>
       {extra > 0 ? (
-        <span className="ml-1.5 text-xs text-[#a3a3a3]">+{extra}</span>
+        <span className="ml-1.5 text-xs text-muted-foreground">+{extra}</span>
       ) : null}
     </div>
   );
