@@ -18,7 +18,12 @@ import {
 import { MainScreenWrapper } from "@/components/internal/shared/screen_wrappers";
 import { SegmentedTabs } from "@/components/internal/shared/segmented_tabs";
 import { Button } from "@/components/ui/button";
-import { INBOX_NOTIFICATIONS } from "@/lib/mock/chat-data";
+import { ensureIdentity } from "@/lib/chat/identity";
+import { setMe, ME } from "@/lib/chat/people-store";
+import {
+  listNotifications, markNotificationRead, markAllNotificationsRead,
+  deleteNotification, subscribeNotifications, normalizeNotification,
+} from "@/lib/supabase/chat_notifications";
 
 const INBOX_TABS = [
   { label: "All", value: "all" },
@@ -33,18 +38,29 @@ export function InboxScreen() {
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Frontend-only: hydrate from local mock and turn `minsAgo` into a live ISO
-  // timestamp on mount (client side) so relative times stay accurate without a
-  // backend. Mirrors the suite's fetch-in-effect pattern.
+  // Fetch from the data layer on mount, then keep the list live via realtime.
   useEffect(() => {
-    const now = Date.now();
-    setNotifications(
-      INBOX_NOTIFICATIONS.map((n) => ({
-        ...n,
-        time: new Date(now - n.minsAgo * 60000).toISOString(),
-      })),
-    );
-    setLoading(false);
+    let cancelled = false;
+    let unsub = () => {};
+    (async () => {
+      const me = await ensureIdentity();
+      if (me) setMe(me);
+      const data = ME.id ? await listNotifications(ME.id) : null;
+      if (!cancelled) {
+        setNotifications(data ?? []);
+        setLoading(false);
+      }
+      if (ME.id) {
+        unsub = subscribeNotifications(ME.id, (row) => {
+          const n = normalizeNotification(row);
+          setNotifications((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, []);
 
   const handleMarkAsRead = (id) => {
@@ -52,6 +68,7 @@ export function InboxScreen() {
     if (selectedNotification?.id === id) {
       setSelectedNotification({ ...selectedNotification, read: true });
     }
+    markNotificationRead(id, true);
   };
 
   const handleMarkAllAsRead = () => {
@@ -62,6 +79,7 @@ export function InboxScreen() {
     if (selectedNotification && !selectedNotification.read) {
       setSelectedNotification({ ...selectedNotification, read: true });
     }
+    if (ME.id) markAllNotificationsRead(ME.id);
   };
 
   const handleDelete = (id) => {
@@ -70,6 +88,7 @@ export function InboxScreen() {
       setIsSheetOpen(false);
       setTimeout(() => setSelectedNotification(null), 300);
     }
+    deleteNotification(id);
   };
 
   const handleNotificationClick = (notification) => {
@@ -189,7 +208,7 @@ export function InboxScreen() {
         ) : filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[400px] text-text-secondary border border-dashed border-border rounded-2xl bg-surface-subtle/50">
             <Inbox
-              className="w-12 h-12 mb-4 text-[#404040]"
+              className="w-12 h-12 mb-4 text-text-tertiary"
               strokeWidth={1.5}
             />
             <p className="text-lg font-medium text-foreground">{emptyTitle}</p>
@@ -211,17 +230,17 @@ export function InboxScreen() {
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="bg-surface-dialog border-l border-border text-foreground p-0 w-full max-w-md shadow-2xl flex flex-col [&>button]:right-5 [&>button]:top-5 [&>button]:text-text-tertiary hover:[&>button]:text-white">
+        <SheetContent className="bg-surface-dialog border-l border-border text-foreground p-0 w-full max-w-md shadow-2xl flex flex-col [&>button]:right-5 [&>button]:top-5 [&>button]:text-text-tertiary hover:[&>button]:text-foreground">
           {selectedNotification && (
             <>
-              <div className="px-6 pt-12 pb-5 border-b border-border shrink-0 bg-[#171717]">
+              <div className="px-6 pt-12 pb-5 border-b border-border shrink-0 bg-surface-subtle">
                 <div className="flex items-center gap-3 mb-4">
                   <div
                     className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${
                       selectedNotification.bg_color ||
                       selectedNotification.bgColor ||
                       "bg-surface-card"
-                    } border border-white/[0.06]`}
+                    } border border-border`}
                   >
                     <DetailIconComponent
                       className={`w-5 h-5 ${
@@ -234,7 +253,7 @@ export function InboxScreen() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] uppercase font-semibold tracking-wider text-text-secondary bg-surface-card px-2 py-1 rounded-md border border-[#252525]">
+                      <span className="text-[10px] uppercase font-semibold tracking-wider text-text-secondary bg-surface-card px-2 py-1 rounded-md border border-border">
                         {selectedNotification.type}
                       </span>
                       <span className="text-[11px] text-text-tertiary shrink-0">
@@ -243,7 +262,7 @@ export function InboxScreen() {
                     </div>
                   </div>
                 </div>
-                <SheetTitle className="text-lg font-semibold text-white leading-tight pr-6">
+                <SheetTitle className="text-lg font-semibold text-foreground leading-tight pr-6">
                   {selectedNotification.title}
                 </SheetTitle>
               </div>
@@ -269,7 +288,7 @@ export function InboxScreen() {
                     if (extraContent.type === "comment") {
                       return (
                         <div className="bg-surface-subtle border border-border rounded-lg p-4">
-                          <p className="text-[13px] text-[#888888] leading-relaxed">
+                          <p className="text-[13px] text-muted-foreground leading-relaxed">
                             {extraContent.text}
                           </p>
                         </div>
@@ -305,10 +324,10 @@ export function InboxScreen() {
                     if (extraContent.type === "actions") {
                       return (
                         <div className="flex items-center gap-2 pt-2">
-                          <Button className="flex-1 py-2 rounded-lg border border-border text-[13px] font-medium text-[#888888] hover:bg-surface-card hover:text-foreground transition-colors">
+                          <Button className="flex-1 py-2 rounded-lg border border-border text-[13px] font-medium text-muted-foreground hover:bg-surface-card hover:text-foreground transition-colors">
                             {extraContent.options?.[0] || "Decline"}
                           </Button>
-                          <Button className="flex-1 py-2 rounded-lg bg-white text-[13px] font-medium text-black hover:bg-gray-200 transition-colors">
+                          <Button className="flex-1 py-2 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
                             {extraContent.options?.[1] || "Accept"}
                           </Button>
                         </div>
@@ -326,7 +345,7 @@ export function InboxScreen() {
                       </div>
                       <div className="text-text-tertiary">Status</div>
                       <div className="flex items-center justify-end gap-2 text-muted-foreground">
-                        <span className={`w-1.5 h-1.5 rounded-full ${selectedNotification.read ? "bg-[#555555]" : "bg-blue-500"}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${selectedNotification.read ? "bg-muted-foreground" : "bg-blue-500"}`} />
                         {selectedNotification.read ? "Read" : "Unread"}
                       </div>
                     </div>
@@ -334,14 +353,14 @@ export function InboxScreen() {
                 </div>
               </div>
 
-              <div className="p-4 border-t border-border bg-[#171717] flex gap-2 shrink-0">
+              <div className="p-4 border-t border-border bg-surface-subtle flex gap-2 shrink-0">
                 {!selectedNotification.read && (
                   <Button
                     onClick={() => {
                       handleMarkAsRead(selectedNotification.id);
                       setIsSheetOpen(false);
                     }}
-                    className="flex-1 bg-white hover:bg-gray-100 text-black font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-[13px]"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-[13px]"
                   >
                     <MailOpen className="w-4 h-4" />
                     Mark as Read

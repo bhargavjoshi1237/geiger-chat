@@ -9,12 +9,13 @@ import {
 } from "@/components/ui/sheet";
 import { UserAvatar } from "./user-avatar";
 import { PRESENCE, fromNow } from "./chat-utils";
-import { ME, getPerson } from "@/lib/mock/chat-data";
+import { ME, getPerson } from "@/lib/chat/people-store";
 import { cn } from "@/lib/utils";
 
 function emailFor(person) {
-  if (person.id === ME.id) return "you@geiger.studio";
-  return `${person.firstName.toLowerCase()}@geiger.studio`;
+  if (person.email) return person.email;
+  if (person.id === ME.id) return ME.email || "you@geiger.app";
+  return `${person.firstName.toLowerCase()}@geiger.app`;
 }
 
 function lastActiveLabel(person) {
@@ -102,7 +103,7 @@ export function DetailsSheet({ conversation, open, onOpenChange, onStartCall }) 
             ) : (
               <UserAvatar person={person} size="xl" showPresence />
             )}
-            <SheetTitle className="mt-3 text-lg text-white">
+            <SheetTitle className="mt-3 text-lg text-foreground">
               {isChannel ? `#${conversation.name}` : person?.name}
             </SheetTitle>
             <SheetDescription className="mt-0.5">

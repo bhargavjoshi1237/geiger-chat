@@ -1,20 +1,27 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, CheckCheck } from "lucide-react";
 import { ThreadHeader } from "./thread-header";
 import { MessageGroup } from "./message-group";
+import { CallEventCard } from "./call-event-card";
+import { MessageInfoDialog } from "./message-info-dialog";
 import { TypingIndicator } from "./typing-indicator";
 import { Composer } from "./composer";
-import { ME, getPerson } from "@/lib/mock/chat-data";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { ME, getPerson } from "@/lib/chat/people-store";
 
 // Group consecutive messages from the same author so the avatar + name only
 // render once per run, the way most chat clients display threads.
 function groupMessages(messages) {
   const groups = [];
   for (const msg of messages) {
+    // Call-event cards stand alone — never folded into an author's bubble run.
+    if (msg.call) {
+      groups.push({ call: msg });
+      continue;
+    }
     const last = groups[groups.length - 1];
-    if (last && last.authorId === msg.authorId) {
+    if (last && !last.call && last.authorId === msg.authorId) {
       last.items.push(msg);
     } else {
       groups.push({ authorId: msg.authorId, items: [msg] });
@@ -23,22 +30,26 @@ function groupMessages(messages) {
   return groups;
 }
 
-// Reusable conversation surface used by both Messages and Channels screens, and
-// (in trimmed form) by the landing playground. Holds its own message list so
-// sending feels live without any backend.
-export function ChatThread({ conversation, onStartCall, autoReply, onBack, onClose }) {
-  const [messages, setMessages] = useState(conversation.messages);
+// Conversation surface used by the Messages and Channels screens, and (in
+// autoReply mode) by the landing playground. When autoReply is absent the thread
+// is CONTROLLED: it renders conversation.messages and reports sends through
+// onSendMessage so the screen owns persistence + realtime. In autoReply mode it
+// keeps its own local message list so the demo feels live without a backend.
+export function ChatThread({ conversation, onStartCall, autoReply, onSendMessage, onReact, onInvite, people = [], onBack, onClose }) {
+  const controlled = !autoReply;
+  const [localMessages, setLocalMessages] = useState(conversation.messages || []);
   const [typing, setTyping] = useState(false);
+  const [replyTo, setReplyTo] = useState(null); // { id, authorId, text }
+  const [infoMsg, setInfoMsg] = useState(null);
   const scrollRef = useRef(null);
   const timers = useRef([]);
 
-  // Reset the thread whenever the active conversation changes.
-  useEffect(() => {
-    setMessages(conversation.messages);
-    setTyping(false);
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-  }, [conversation.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ChatThread is remounted per conversation (keyed on conversation.id by the
+  // parent), so local state initializes fresh — no reset effect needed.
+  const messages = useMemo(
+    () => (controlled ? conversation.messages || [] : localMessages),
+    [controlled, conversation.messages, localMessages],
+  );
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -49,11 +60,34 @@ export function ChatThread({ conversation, onStartCall, autoReply, onBack, onClo
 
   const groups = useMemo(() => groupMessages(messages), [messages]);
 
-  const handleSend = (text) => {
-    const id = `m-${messages.length}-${text.length}-${text.charCodeAt(0)}`;
-    setMessages((prev) => [...prev, { id, authorId: ME.id, minsAgo: 0, text }]);
+  // Read receipt for the last message in a DM, but only when it's mine: "Seen"
+  // once the other person's read marker has passed it, otherwise "Sent".
+  const receipt = useMemo(() => {
+    if (!controlled || conversation.type !== "dm") return null;
+    const last = messages[messages.length - 1];
+    if (!last || last.authorId !== ME.id) return null;
+    const otherRead = conversation.reads?.[conversation.participantId];
+    const seen =
+      !!otherRead && !!last.createdAt &&
+      new Date(otherRead).getTime() >= new Date(last.createdAt).getTime();
+    return { seen };
+  }, [controlled, conversation.type, conversation.reads, conversation.participantId, messages]);
 
-    if (!autoReply) return;
+  // Per-message actions wired down to MessageGroup/MessageActions.
+  const handleReply = (msg) =>
+    setReplyTo({ id: msg.id, authorId: msg.authorId, text: msg.text });
+  const handleReact = (msg, emoji) => onReact?.(msg, emoji);
+  const handleInfo = (msg) => setInfoMsg(msg);
+
+  const handleSend = (text) => {
+    if (controlled) {
+      onSendMessage?.(text, replyTo);
+      setReplyTo(null);
+      return;
+    }
+    // Legacy autoReply path (landing playground).
+    const id = `m-${localMessages.length}-${text.length}-${text.charCodeAt(0)}`;
+    setLocalMessages((prev) => [...prev, { id, authorId: ME.id, minsAgo: 0, text }]);
     const replier = getPerson(
       conversation.type === "channel"
         ? (conversation.memberIds || []).find((mid) => mid !== ME.id)
@@ -64,7 +98,7 @@ export function ChatThread({ conversation, onStartCall, autoReply, onBack, onClo
       setTyping(false);
       const reply = autoReply(text, conversation);
       if (reply) {
-        setMessages((prev) => [
+        setLocalMessages((prev) => [
           ...prev,
           { id: `r-${prev.length}-${reply.length}`, authorId: replier.id, minsAgo: 0, text: reply },
         ]);
@@ -79,24 +113,78 @@ export function ChatThread({ conversation, onStartCall, autoReply, onBack, onClo
       : getPerson(conversation.participantId);
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <div className="flex h-full min-w-0 flex-1 flex-col">
-        <ThreadHeader conversation={conversation} onStartCall={onStartCall} onBack={onBack} onClose={onClose} />
-        <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto py-5 scrollbar-subtle">
-          {groups.map((group, i) => (
-            <MessageGroup key={`${group.authorId}-${i}`} group={group} />
-          ))}
-          {typing ? <TypingIndicator person={replier} /> : null}
-        </div>
-        <Composer
-          placeholder={
-            conversation.type === "channel"
-              ? `Message #${conversation.name}`
-              : `Message ${replier.firstName}`
-          }
-          onSend={handleSend}
-        />
+    <div className="flex h-full min-w-0 flex-1 flex-col">
+      <ThreadHeader
+        conversation={conversation}
+        onStartCall={onStartCall}
+        onBack={onBack}
+        onClose={onClose}
+        people={people}
+        onInvite={onInvite}
+      />
+      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto py-5 scrollbar-subtle">
+        {groups.map((group, i) =>
+          group.call ? (
+            <CallEventCard
+              key={group.call.id || `call-${i}`}
+              message={group.call}
+              onCallBack={(kind) => onStartCall?.(kind)}
+            />
+          ) : (
+            <MessageGroup
+              key={`${group.authorId}-${i}`}
+              group={group}
+              onReact={controlled ? handleReact : undefined}
+              onReply={controlled ? handleReply : undefined}
+              onInfo={controlled ? handleInfo : undefined}
+            />
+          ),
+        )}
+        {receipt && !typing ? (
+          <div className="flex items-center justify-end gap-1 px-3 text-[11px] text-text-secondary md:px-6">
+            {receipt.seen ? (
+              <>
+                <CheckCheck className="h-3.5 w-3.5 text-primary" />
+                Seen
+              </>
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                Sent
+              </>
+            )}
+          </div>
+        ) : null}
+        {typing ? <TypingIndicator person={replier} /> : null}
       </div>
-    </TooltipProvider>
+      <Composer
+        placeholder={
+          conversation.type === "channel"
+            ? `Message #${conversation.name}`
+            : `Message ${replier.firstName}`
+        }
+        onSend={handleSend}
+        onCommand={(id) => {
+          if (id === "call") onStartCall?.("audio");
+          else if (id === "video") onStartCall?.("video");
+        }}
+        replyingTo={
+          replyTo
+            ? {
+                name: replyTo.authorId === ME.id ? "yourself" : getPerson(replyTo.authorId).firstName,
+                text: replyTo.text,
+              }
+            : null
+        }
+        onCancelReply={() => setReplyTo(null)}
+      />
+
+      <MessageInfoDialog
+        message={infoMsg}
+        conversation={conversation}
+        open={!!infoMsg}
+        onOpenChange={(v) => !v && setInfoMsg(null)}
+      />
+    </div>
   );
 }

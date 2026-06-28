@@ -1,7 +1,8 @@
 // Shared helpers for the chat UI. Times are stored as "minutes ago" so the
 // rendered output is deterministic and independent of the wall clock.
 
-import { ME, getPerson } from "@/lib/mock/chat-data";
+import { ThumbsUp, Heart, Laugh, PartyPopper, Lightbulb, Flame } from "lucide-react";
+import { ME, getPerson } from "@/lib/chat/people-store";
 
 export const PRESENCE = {
   online: { color: "#22c55e", label: "Active" },
@@ -9,6 +10,20 @@ export const PRESENCE = {
   dnd: { color: "#ef4444", label: "Do not disturb" },
   offline: { color: "#737373", label: "Offline" },
 };
+
+// Single source of truth for message reactions. Stored by `key` (not an emoji
+// glyph) so the UI is icon-only and consistent everywhere. `colorClass` tints
+// the Lucide icon; consumers render `icon` as a component.
+export const REACTIONS = [
+  { key: "like", label: "Like", icon: ThumbsUp, colorClass: "text-blue-400" },
+  { key: "love", label: "Love", icon: Heart, colorClass: "text-rose-400" },
+  { key: "laugh", label: "Haha", icon: Laugh, colorClass: "text-amber-400" },
+  { key: "celebrate", label: "Celebrate", icon: PartyPopper, colorClass: "text-fuchsia-400" },
+  { key: "insightful", label: "Insightful", icon: Lightbulb, colorClass: "text-yellow-400" },
+  { key: "fire", label: "Fire", icon: Flame, colorClass: "text-orange-400" },
+];
+
+export const REACTION_MAP = Object.fromEntries(REACTIONS.map((r) => [r.key, r]));
 
 export function initials(name = "") {
   return name
@@ -31,15 +46,12 @@ export function fromNow(minsAgo) {
   return `${Math.round(days / 7)}w`;
 }
 
-// "minutes ago" -> clock time label (e.g. "9:42 AM"), derived deterministically
-// from a fixed anchor so the demo never shifts between renders.
+// "minutes ago" -> clock time label (e.g. "9:42 AM"), computed from the actual
+// time the message was sent (now minus minsAgo).
 export function clockTime(minsAgo) {
-  // Anchor at 10:00 for stable, readable timestamps across the mock data.
-  const anchor = 10 * 60; // minutes since midnight
-  let total = anchor - minsAgo;
-  total = ((total % 1440) + 1440) % 1440;
-  let hours = Math.floor(total / 60);
-  const minutes = total % 60;
+  const d = new Date(Date.now() - (minsAgo || 0) * 60000);
+  let hours = d.getHours();
+  const minutes = d.getMinutes();
   const period = hours >= 12 ? "PM" : "AM";
   hours = hours % 12;
   if (hours === 0) hours = 12;
@@ -56,6 +68,9 @@ export function durationLabel(mins) {
 
 export function lastMessagePreview(conversation) {
   const last = conversation.messages?.[conversation.messages.length - 1];
+  if (last?.call) {
+    return last.call.status === "missed" ? "Missed call" : "Call ended";
+  }
   return last?.text || "";
 }
 

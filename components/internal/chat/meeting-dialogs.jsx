@@ -94,8 +94,8 @@ function MediaToggle({ on, onIcon: OnIcon, offIcon: OffIcon, label, onToggle }) 
       className={cn(
         "flex h-11 w-11 items-center justify-center rounded-full border transition-colors",
         on
-          ? "border-[#333] bg-surface-hover text-white hover:bg-[#333]"
-          : "border-transparent bg-[#3a1d1d] text-red-300 hover:bg-[#4a2424]",
+          ? "border-border-strong bg-surface-hover text-foreground hover:bg-surface-active"
+          : "border-transparent bg-red-500/10 text-red-300 hover:bg-red-500/20",
       )}
     >
       {on ? <OnIcon className="h-[18px] w-[18px]" /> : <OffIcon className="h-[18px] w-[18px]" />}
@@ -147,7 +147,7 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Add people by name"
-              className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-text-secondary focus:border-border-strong"
+              className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-text-secondary focus:border-border-strong"
             />
           </div>
 
@@ -164,7 +164,7 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
                   <button
                     type="button"
                     onClick={() => remove(p.id)}
-                    className="flex h-4 w-4 items-center justify-center rounded-full text-text-secondary hover:bg-[#333] hover:text-foreground"
+                    className="flex h-4 w-4 items-center justify-center rounded-full text-text-secondary hover:bg-surface-active hover:text-foreground"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -189,7 +189,7 @@ export function InvitePeopleDialog({ open, onOpenChange, onStart }) {
                       <button
                         type="button"
                         onClick={() => add(p)}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[#222]"
+                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-hover"
                       >
                         <UserAvatar person={p} size="md" showPresence />
                         <span className="min-w-0 flex-1">
@@ -261,7 +261,7 @@ export function JoinConfirmDialog({ open, code, onOpenChange, onJoin }) {
 
         <div className="p-5">
           {/* Self preview */}
-          <div className="relative flex min-h-[150px] items-center justify-center overflow-hidden rounded-xl border border-[#262626] bg-[#0e0e0e]">
+          <div className="relative flex min-h-[150px] items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
             {camOn ? (
               <div
                 className="absolute inset-0"
@@ -275,7 +275,7 @@ export function JoinConfirmDialog({ open, code, onOpenChange, onJoin }) {
               <UserAvatar person={ME} size="xl" />
             </div>
             {!camOn ? (
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-md bg-black/45 px-2 py-1 text-xs text-[#cbd5e1] backdrop-blur-sm">
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-md bg-black/45 px-2 py-1 text-xs text-text-secondary backdrop-blur-sm">
                 Camera is off
               </span>
             ) : null}
@@ -380,9 +380,9 @@ function MiniCalendar({ selected, onSelect }) {
               className={cn(
                 "flex h-8 items-center justify-center rounded-md text-sm transition-colors",
                 isSelected
-                  ? "bg-[#e7e7e7] font-semibold text-[#161616]"
+                  ? "bg-primary font-semibold text-primary-foreground"
                   : isPast
-                    ? "text-[#3f3f3f]"
+                    ? "text-text-tertiary"
                     : inMonth
                       ? "text-foreground hover:bg-surface-hover"
                       : "text-text-tertiary hover:bg-surface-hover",
@@ -398,7 +398,7 @@ function MiniCalendar({ selected, onSelect }) {
   );
 }
 
-export function ScheduleDialog({ open, onOpenChange, defaultTitle = "" }) {
+export function ScheduleDialog({ open, onOpenChange, defaultTitle = "", onSchedule }) {
   const [title, setTitle] = useState(defaultTitle);
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [slot, setSlot] = useState(540); // 9:00 AM default
@@ -407,10 +407,9 @@ export function ScheduleDialog({ open, onOpenChange, defaultTitle = "" }) {
   const slotLabel = TIME_SLOTS.find((s) => s.value === slot)?.label ?? "";
 
   const schedule = () => {
-    const when = date ? format(date, "EEE, MMM d") : "";
-    toast.success("Meeting scheduled", {
-      description: `${title.trim() || "Untitled meeting"} · ${when} at ${slotLabel}`,
-    });
+    // date is start-of-day; slot is minutes since midnight.
+    const scheduledAt = new Date(date.getTime() + slot * 60000).toISOString();
+    onSchedule?.({ title: title.trim() || "Untitled call", scheduledAt, kind: "video" });
     onOpenChange(false);
   };
 
@@ -433,7 +432,7 @@ export function ScheduleDialog({ open, onOpenChange, defaultTitle = "" }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Sprint Planning"
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-white outline-none transition-colors placeholder:text-text-secondary focus:border-border-strong"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-text-secondary focus:border-border-strong"
             />
           </div>
 

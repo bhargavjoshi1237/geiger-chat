@@ -1,16 +1,21 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, FileText, FileImage, FileArchive, FileSpreadsheet,
   Presentation, File as FileIcon, Download, MoreHorizontal, Upload,
 } from "lucide-react";
+import { toast } from "sonner";
 import { ScreenContainer, ScreenHeader, btnPrimary } from "./screen-shell";
 import { fromNow } from "@/components/internal/chat/chat-utils";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { FILES, getPerson } from "@/lib/mock/chat-data";
+import { ensureIdentity } from "@/lib/chat/identity";
+import { getPerson, hydratePeople, setMe, ME } from "@/lib/chat/people-store";
+import { listProfiles } from "@/lib/supabase/chat_profiles";
+import { listFiles, createFile } from "@/lib/supabase/chat_files";
+import { uploadChatFile, fileKind, formatSize } from "@/lib/supabase/chat_storage";
 import { cn } from "@/lib/utils";
 
 const KIND_META = {
@@ -36,24 +41,74 @@ function meta(kind) {
 export function FilesScreen() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const me = await ensureIdentity();
+      if (me) setMe(me);
+      const profiles = await listProfiles();
+      if (profiles) hydratePeople(profiles);
+      const data = await listFiles();
+      if (!cancelled) {
+        setRows(data ?? []);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const files = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return FILES.filter((f) => {
+    return rows.filter((f) => {
       if (type !== "all" && f.kind !== type) return false;
       if (!q) return true;
       return f.name.toLowerCase().includes(q);
     });
-  }, [query, type]);
+  }, [rows, query, type]);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!ME.id) {
+      toast.error("Database isn't configured.");
+      return;
+    }
+    setUploading(true);
+    const url = await uploadChatFile(file, ME.id);
+    const created = await createFile({
+      name: file.name,
+      kind: fileKind(file.name),
+      size: formatSize(file.size),
+      source: "Direct upload",
+      url,
+      ownerId: ME.id,
+    });
+    setUploading(false);
+    if (created) {
+      setRows((prev) => [created, ...prev]);
+      toast.success("File uploaded");
+    } else {
+      toast.error("Couldn't upload the file.");
+    }
+  };
 
   return (
     <ScreenContainer>
+      <input ref={inputRef} type="file" className="hidden" onChange={handleUpload} />
       <ScreenHeader
         title="Files"
         description="Everything shared across your conversations and channels."
         actions={
-          <button className={btnPrimary}>
-            <Upload className="h-4 w-4" /> Upload
+          <button className={btnPrimary} onClick={() => inputRef.current?.click()} disabled={uploading}>
+            <Upload className="h-4 w-4" /> {uploading ? "Uploading…" : "Upload"}
           </button>
         }
       />
@@ -76,7 +131,7 @@ export function FilesScreen() {
                 onClick={() => setType(t.key)}
                 className={cn(
                   "h-7 rounded-md px-3 text-xs font-medium transition-colors",
-                  type === t.key ? "bg-surface-hover text-white" : "text-muted-foreground hover:text-foreground",
+                  type === t.key ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {t.label}
@@ -101,7 +156,8 @@ export function FilesScreen() {
               const mt = meta(f.kind);
               const Icon = mt.icon;
               const owner = getPerson(f.ownerId);
-              const source = f.source.startsWith("#") || ["engineering", "design", "product", "random", "marketing"].includes(f.source) ? `#${f.source}` : f.source;
+              const src = f.source || "";
+              const source = src.startsWith("#") || ["engineering", "design", "product", "random", "marketing"].includes(src) ? `#${src}` : src;
               return (
                 <TableRow key={f.id} className="group">
                   <TableCell>
@@ -120,9 +176,18 @@ export function FilesScreen() {
                   <TableCell className="hidden text-xs text-muted-foreground md:table-cell">{f.size}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all hover:bg-surface-hover hover:text-foreground group-hover:opacity-100" title="Download">
+                      <a
+                        href={f.url || undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all hover:bg-surface-hover hover:text-foreground group-hover:opacity-100",
+                          !f.url && "pointer-events-none opacity-30",
+                        )}
+                        title="Download"
+                      >
                         <Download className="h-4 w-4" />
-                      </button>
+                      </a>
                       <button className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground" title="More">
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
@@ -133,7 +198,13 @@ export function FilesScreen() {
             })}
           </TableBody>
         </Table>
-        {files.length === 0 ? <p className="py-14 text-center text-sm text-text-secondary">No files found.</p> : null}
+        {loading ? (
+          <p className="py-14 text-center text-sm text-text-secondary">Loading files…</p>
+        ) : files.length === 0 ? (
+          <p className="py-14 text-center text-sm text-text-secondary">
+            {rows.length === 0 ? "No files yet. Upload one to get started." : "No files found."}
+          </p>
+        ) : null}
         </div>
       </div>
     </ScreenContainer>

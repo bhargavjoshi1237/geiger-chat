@@ -28,7 +28,7 @@ function Card({ icon: Icon, title, children }) {
     <section className="overflow-hidden rounded-2xl border border-border bg-surface-subtle">
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <Icon className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold text-white">{title}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       </div>
       <div>{children}</div>
     </section>
@@ -62,7 +62,7 @@ export function SettingsScreen() {
           <Row title="Theme" subtitle="How Geiger Chat looks to you" control={
             <div className="flex items-center gap-1 rounded-lg border border-border bg-surface-card p-1">
               {THEMES.map((t) => (
-                <button key={t} onClick={() => setTheme(t)} className={cn("h-7 rounded-md px-2.5 text-xs font-medium transition-colors", theme === t ? "bg-surface-hover text-white" : "text-muted-foreground hover:text-foreground")}>
+                <button key={t} onClick={() => setTheme(t)} className={cn("h-7 rounded-md px-2.5 text-xs font-medium transition-colors", theme === t ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground")}>
                   {t}
                 </button>
               ))}

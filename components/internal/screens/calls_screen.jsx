@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Video, Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed,
   Link2, Calendar, ArrowRight, MoreHorizontal, MessageSquare,
@@ -21,7 +21,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RECENT_CALLS, getPerson } from "@/lib/mock/chat-data";
+import { ensureIdentity } from "@/lib/chat/identity";
+import { getPerson, hydratePeople, setMe, ME } from "@/lib/chat/people-store";
+import { listProfiles } from "@/lib/supabase/chat_profiles";
+import { listCalls, logCall } from "@/lib/supabase/chat_calls";
+import { createScheduledCall } from "@/lib/supabase/chat_scheduled_calls";
 import { cn } from "@/lib/utils";
 
 function ActionCard({ icon: Icon, title, subtitle, onClick, children }) {
@@ -33,7 +37,7 @@ function ActionCard({ icon: Icon, title, subtitle, onClick, children }) {
       <p className="mt-4 text-sm font-medium text-foreground">{title}</p>
       <p className="mt-1 text-xs text-text-secondary">{subtitle}</p>
       {children ? <div className="mt-4">{children}</div> : (
-        <button onClick={onClick} className="mt-4 inline-flex h-8 w-fit items-center gap-1.5 rounded-lg bg-[#e7e7e7] px-3 text-xs font-semibold text-[#161616] transition-colors hover:bg-white">
+        <button onClick={onClick} className="mt-4 inline-flex h-8 w-fit items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
           Start <ArrowRight className="h-3 w-3" />
         </button>
       )}
@@ -135,8 +139,44 @@ export function CallsScreen() {
   const [joinCode, setJoinCode] = useState("");
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleTitle, setScheduleTitle] = useState("");
+  const [calls, setCalls] = useState([]);
+  const [loading, setLoading] = useState(true);
   // Bumped on every open so each dialog remounts with a fresh code / clean form.
   const [session, setSession] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const me = await ensureIdentity();
+      if (me) setMe(me);
+      const profiles = await listProfiles();
+      if (profiles) hydratePeople(profiles);
+      const data = ME.id ? await listCalls(ME.id) : null;
+      if (!cancelled) {
+        setCalls(data ?? []);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Open the meet stage and record the call in the log.
+  const startMeeting = ({ title, participants = [], initialMic, initialCam }) => {
+    setMeeting({ title, participants, initialMic, initialCam });
+    if (ME.id) {
+      logCall({
+        title: title || "Meeting",
+        kind: initialCam === false ? "audio" : "video",
+        direction: "outgoing",
+        ownerId: ME.id,
+        participantIds: participants.map((p) => p.id).filter(Boolean),
+      }).then((logged) => {
+        if (logged) setCalls((prev) => [logged, ...prev]);
+      });
+    }
+  };
 
   const openInvite = () => {
     setSession((s) => s + 1);
@@ -151,6 +191,19 @@ export function CallsScreen() {
     setScheduleTitle(title);
     setSession((s) => s + 1);
     setScheduleOpen(true);
+  };
+
+  const handleSchedule = async ({ title, scheduledAt, kind }) => {
+    if (!ME.id) {
+      toast.error("Database isn't configured.");
+      return;
+    }
+    const created = await createScheduledCall({ title, kind, scheduledAt, createdBy: ME.id });
+    if (created) {
+      toast.success("Call scheduled — you'll get an Inbox reminder an hour before.");
+    } else {
+      toast.error("Couldn't schedule the call.");
+    }
   };
 
   const handleCallAction = (action, call) => {
@@ -206,7 +259,7 @@ export function CallsScreen() {
               <button
                 onClick={openJoin}
                 disabled={!code.trim()}
-                className="inline-flex h-8 shrink-0 items-center rounded-lg bg-[#e7e7e7] px-3 text-xs font-semibold text-[#161616] hover:bg-white disabled:opacity-40 disabled:hover:bg-[#e7e7e7]"
+                className="inline-flex h-8 shrink-0 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:hover:bg-primary"
               >
                 Join
               </button>
@@ -231,14 +284,28 @@ export function CallsScreen() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {RECENT_CALLS.map((c) => (
-                <CallTableRow
-                  key={c.id}
-                  call={c}
-                  onCallBack={(call) => setMeeting({ title: call.title, participants: call.participantIds.map(getPerson) })}
-                  onAction={handleCallAction}
-                />
-              ))}
+              {loading ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={6} className="py-12 text-center text-sm text-text-secondary">
+                    Loading calls…
+                  </TableCell>
+                </TableRow>
+              ) : calls.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={6} className="py-12 text-center text-sm text-text-secondary">
+                    No calls yet. Start a meeting to see it here.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                calls.map((c) => (
+                  <CallTableRow
+                    key={c.id}
+                    call={c}
+                    onCallBack={(call) => startMeeting({ title: call.title, participants: call.participantIds.map(getPerson) })}
+                    onAction={handleCallAction}
+                  />
+                ))
+              )}
             </TableBody>
           </Table>
         </section>
@@ -250,7 +317,7 @@ export function CallsScreen() {
         onOpenChange={setInviteOpen}
         onStart={({ title, participants }) => {
           setInviteOpen(false);
-          setMeeting({ title, participants });
+          startMeeting({ title, participants });
         }}
       />
 
@@ -261,11 +328,11 @@ export function CallsScreen() {
         onOpenChange={setJoinOpen}
         onJoin={({ title, participants, initialMic, initialCam }) => {
           setJoinOpen(false);
-          setMeeting({ title, participants, initialMic, initialCam });
+          startMeeting({ title, participants, initialMic, initialCam });
         }}
       />
 
-      <ScheduleDialog key={`schedule-${session}`} open={scheduleOpen} onOpenChange={setScheduleOpen} defaultTitle={scheduleTitle} />
+      <ScheduleDialog key={`schedule-${session}`} open={scheduleOpen} onOpenChange={setScheduleOpen} defaultTitle={scheduleTitle} onSchedule={handleSchedule} />
 
       {meeting ? (
         <MeetStage

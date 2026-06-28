@@ -6,7 +6,7 @@ import {
   Users, MessageSquare, PhoneOff, Hand, MoreHorizontal, Maximize2,
 } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
-import { ME } from "@/lib/mock/chat-data";
+import { ME } from "@/lib/chat/people-store";
 import { cn } from "@/lib/utils";
 
 function useElapsed(active) {
@@ -28,8 +28,8 @@ function ParticipantTile({ person, cameraOn = true, muted = false, speaking = fa
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border bg-[#0e0e0e] transition-all",
-        speaking ? "border-[#525252] ring-1 ring-ring" : "border-[#262626]",
+        "group relative overflow-hidden rounded-xl border bg-background transition-all",
+        speaking ? "border-border-strong ring-1 ring-ring" : "border-border",
         big ? "min-h-[260px]" : "min-h-[140px]",
       )}
     >
@@ -54,8 +54,8 @@ function ParticipantTile({ person, cameraOn = true, muted = false, speaking = fa
       ) : null}
 
       <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/45 px-2 py-1 backdrop-blur-sm">
-        <span className="text-xs font-medium text-white">{isSelf ? "You" : person.firstName}</span>
-        {muted ? <MicOff className="h-3 w-3 text-red-400" /> : <Mic className="h-3 w-3 text-[#cbd5e1]" />}
+        <span className="text-xs font-medium text-foreground">{isSelf ? "You" : person.firstName}</span>
+        {muted ? <MicOff className="h-3 w-3 text-red-400" /> : <Mic className="h-3 w-3 text-text-secondary" />}
       </div>
     </div>
   );
@@ -72,8 +72,8 @@ function ControlButton({ icon: Icon, label, active, danger, onClick }) {
         danger
           ? "border-transparent bg-red-600 text-white hover:bg-red-500"
           : active
-            ? "border-[#333] bg-surface-hover text-white hover:bg-[#333]"
-            : "border-transparent bg-[#3a1d1d] text-red-300 hover:bg-[#4a2424]",
+            ? "border-border-strong bg-surface-hover text-foreground hover:bg-surface-active"
+            : "border-transparent bg-red-500/10 text-red-300 hover:bg-red-500/20",
       )}
     >
       <Icon className="h-[18px] w-[18px]" />
@@ -106,8 +106,8 @@ export function MeetStage({ title = "Meeting", participants = [], kind = "video"
   return (
     <div
       className={cn(
-        "flex flex-col bg-[#0c0c0c]",
-        embedded ? "h-full rounded-2xl border border-[#262626] overflow-hidden" : "fixed inset-0 z-50",
+        "flex flex-col bg-background",
+        embedded ? "h-full rounded-2xl border border-border overflow-hidden" : "fixed inset-0 z-50",
       )}
     >
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -116,7 +116,7 @@ export function MeetStage({ title = "Meeting", participants = [], kind = "video"
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
           </span>
           <div>
-            <h2 className="text-sm font-semibold text-white">{title}</h2>
+            <h2 className="text-sm font-semibold text-foreground">{title}</h2>
             <p className="text-[11px] text-text-secondary">{elapsed} · {everyone.length} in call</p>
           </div>
         </div>
@@ -151,10 +151,10 @@ export function MeetStage({ title = "Meeting", participants = [], kind = "video"
         <ControlButton icon={camOn ? VideoIcon : VideoOff} label={camOn ? "Stop video" : "Start video"} active={camOn} onClick={() => setCamOn((v) => !v)} />
         <ControlButton icon={MonitorUp} label="Share screen" active={sharing} onClick={() => setSharing((v) => !v)} />
         <ControlButton icon={Hand} label="Raise hand" active={handRaised} onClick={() => setHandRaised((v) => !v)} />
-        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-white hover:bg-[#333] sm:flex" title="Chat">
+        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-foreground hover:bg-surface-active sm:flex" title="Chat">
           <MessageSquare className="h-[18px] w-[18px]" />
         </button>
-        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-white hover:bg-[#333] sm:flex" title="More">
+        <button className="hidden h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-foreground hover:bg-surface-active sm:flex" title="More">
           <MoreHorizontal className="h-[18px] w-[18px]" />
         </button>
         <button

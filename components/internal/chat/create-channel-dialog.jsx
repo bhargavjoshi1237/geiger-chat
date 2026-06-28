@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { Hash, Plus, Lock, Globe } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PeoplePicker } from "./people-picker";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
@@ -14,26 +14,31 @@ const VISIBILITY = [
   { key: "private", label: "Private", hint: "Invite only", icon: Lock },
 ];
 
-// "Create channel" dialog: name, optional topic, and visibility. Mock-only —
-// submitting toasts and closes rather than persisting a channel.
-export function CreateChannelDialog() {
+// "Create channel" dialog: name, optional topic, visibility, and an optional set
+// of people to add up front. Persists through onCreateChannel(draft).
+export function CreateChannelDialog({ people = [], onCreateChannel }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [topic, setTopic] = useState("");
   const [visibility, setVisibility] = useState("public");
+  const [memberIds, setMemberIds] = useState([]);
 
   const reset = () => {
     setName("");
     setTopic("");
     setVisibility("public");
+    setMemberIds([]);
   };
+
+  const toggle = (id) =>
+    setMemberIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const create = () => {
     const clean = name.trim().replace(/^#/, "");
     if (!clean) return;
     setOpen(false);
+    onCreateChannel?.({ name: clean, topic: topic.trim(), visibility, memberIds });
     reset();
-    toast.success(`Created #${clean}`);
   };
 
   return (
@@ -98,6 +103,14 @@ export function CreateChannelDialog() {
               );
             })}
           </div>
+          {people.length ? (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Add people <span className="text-text-secondary">(optional{memberIds.length ? `, ${memberIds.length} selected` : ""})</span>
+              </label>
+              <PeoplePicker people={people} selectedIds={memberIds} onToggle={toggle} />
+            </div>
+          ) : null}
         </div>
         <DialogFooter>
           <button
@@ -111,7 +124,7 @@ export function CreateChannelDialog() {
             type="button"
             onClick={create}
             disabled={!name.trim()}
-            className="inline-flex h-9 items-center rounded-lg bg-[#e7e7e7] px-4 text-sm font-semibold text-[#161616] transition-colors hover:bg-white disabled:opacity-40"
+            className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
           >
             Create channel
           </button>

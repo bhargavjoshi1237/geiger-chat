@@ -5,7 +5,7 @@ import { Hash, MessageSquare } from "lucide-react";
 import { ConversationList } from "./conversation-list";
 import { ChatThread } from "./chat-thread";
 import { MeetStage } from "./meet-stage";
-import { getPerson } from "@/lib/mock/chat-data";
+import { getPerson, ME } from "@/lib/chat/people-store";
 import { cn } from "@/lib/utils";
 
 // Empty state shown in the thread pane when no conversation is open.
@@ -30,33 +30,67 @@ function EmptyThread({ variant }) {
   );
 }
 
-// Conversation list + active thread. Side-by-side on desktop; on mobile the
-// list and the thread swap based on selection. Starting a call from the thread
-// opens the MeetStage as a full-workspace overlay.
-export function TwoPaneChat({ title, items, variant = "dm", autoReply }) {
-  const [activeId, setActiveId] = useState(items[0]?.id);
+// Conversation list + active thread, controlled by the parent screen (which owns
+// data, selection and persistence). Side-by-side on desktop; on mobile the list
+// and the thread swap based on selection. Starting a call opens the MeetStage as
+// a full-workspace overlay.
+export function TwoPaneChat({
+  title,
+  items,
+  variant = "dm",
+  loading = false,
+  activeId,
+  onSelect,
+  onCloseActive,
+  autoReply,
+  people = [],
+  onStartDm,
+  onCreateChannel,
+  onSendMessage,
+  onReact,
+  onInvite,
+  onCall,
+  onPin,
+  onMarkRead,
+  onLeave,
+}) {
   const [showThreadMobile, setShowThreadMobile] = useState(false);
   const [call, setCall] = useState(null); // { kind }
 
-  const active = items.find((c) => c.id === activeId) || null;
+  // Controlled by the screen (activeId prop) or self-managed for the landing
+  // playground (no activeId prop → seed from the first conversation).
+  const isControlled = activeId !== undefined;
+  const [internalActive, setInternalActive] = useState(items[0]?.id);
+  const currentActive = isControlled ? activeId : internalActive;
 
-  const onSelect = (id) => {
-    setActiveId(id);
+  const active = items.find((c) => c.id === currentActive) || null;
+
+  const select = (id) => {
+    if (!isControlled) setInternalActive(id);
+    onSelect?.(id);
     setShowThreadMobile(true);
   };
 
-  // Closing returns to the list (mobile) and clears the thread pane (desktop).
-  const onClose = () => {
-    setActiveId(null);
+  const close = () => {
+    if (!isControlled) setInternalActive(null);
+    onCloseActive?.();
     setShowThreadMobile(false);
   };
 
-  const startCall = (kind) => setCall({ kind });
+  // When a real call engine is wired in (the app), hand off to it. Otherwise
+  // (the landing playground) fall back to the local demo MeetStage.
+  const startCall = (kind) => {
+    if (onCall) {
+      onCall(kind, active);
+      return;
+    }
+    setCall({ kind });
+  };
 
   const callParticipants = !active
     ? []
     : active.type === "channel"
-      ? (active.memberIds || []).filter((id) => id !== "u-me").slice(0, 5).map(getPerson)
+      ? (active.memberIds || []).filter((id) => id !== ME.id).slice(0, 5).map(getPerson)
       : [getPerson(active.participantId)];
 
   return (
@@ -65,9 +99,16 @@ export function TwoPaneChat({ title, items, variant = "dm", autoReply }) {
         <ConversationList
           title={title}
           items={items}
-          activeId={activeId}
-          onSelect={onSelect}
+          activeId={currentActive}
+          onSelect={select}
           variant={variant}
+          loading={loading}
+          people={people}
+          onStartDm={onStartDm}
+          onCreateChannel={onCreateChannel}
+          onPin={onPin}
+          onMarkRead={onMarkRead}
+          onLeave={onLeave}
         />
       </div>
 
@@ -77,9 +118,13 @@ export function TwoPaneChat({ title, items, variant = "dm", autoReply }) {
             key={active.id}
             conversation={active}
             onStartCall={startCall}
-            onBack={() => setShowThreadMobile(false)}
-            onClose={onClose}
+            onSendMessage={onSendMessage}
+            onReact={onReact}
+            onInvite={onInvite}
             autoReply={autoReply}
+            people={people}
+            onBack={() => setShowThreadMobile(false)}
+            onClose={close}
           />
         ) : (
           <EmptyThread variant={variant} />

@@ -76,7 +76,7 @@ function ConversationCard({ conversation, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col gap-2.5 rounded-xl bg-surface-card p-3.5 text-left ring-1 ring-inset ring-transparent transition-colors hover:bg-surface-active hover:ring-[#333]"
+      className="group flex flex-col gap-2.5 rounded-xl bg-surface-card p-3.5 text-left ring-1 ring-inset ring-transparent transition-colors hover:bg-surface-active hover:ring-border"
     >
       <div className="flex items-center gap-2.5">
         {isChannel ? (
@@ -190,7 +190,7 @@ export function OverviewScreen({ onNavigate }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">Up next</span>
-                  <h4 className="mt-1 truncate text-base font-semibold text-white">{nextMeeting.title}</h4>
+                  <h4 className="mt-1 truncate text-base font-semibold text-foreground">{nextMeeting.title}</h4>
                   <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> {untilLabel(nextMeeting.inMins)}
                   </p>

@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { initials, PRESENCE } from "./chat-utils";
 
 const SIZES = {
-  xs: "h-6 w-6 text-[10px]",
-  sm: "h-8 w-8 text-xs",
-  md: "h-9 w-9 text-sm",
-  lg: "h-11 w-11 text-base",
-  xl: "h-16 w-16 text-xl",
+  xs: "size-6 text-[10px]",
+  sm: "size-8 text-xs",
+  md: "size-9 text-sm",
+  lg: "size-11 text-base",
+  xl: "size-16 text-xl",
 };
 
 const DOT_SIZES = {
@@ -20,23 +21,32 @@ const DOT_SIZES = {
   xl: "h-3.5 w-3.5",
 };
 
-// Deterministic colored-initials avatar with an optional presence indicator.
-// Kept self-contained (no remote images) so screens render reliably offline.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+// A person's profile picture lives at a deterministic public path keyed by their
+// id (same convention as the top-bar profile menu). Returns null when storage
+// isn't configured so we fall straight back to initials.
+function pfpUrl(person) {
+  if (!SUPABASE_URL || !person?.id) return null;
+  return `${SUPABASE_URL}/storage/v1/object/public/pfp/${person.id}/latest.jpg`;
+}
+
+// Avatar with an optional presence indicator. Shows the person's uploaded
+// profile picture, gracefully falling back to colored initials when there's no
+// image (or it fails to load / the app is offline) — handled by Radix Avatar.
 export function UserAvatar({ person, size = "md", showPresence = false, className }) {
   if (!person) return null;
   const presence = PRESENCE[person.presence] || PRESENCE.offline;
+  const url = pfpUrl(person);
 
   return (
     <div className={cn("relative inline-flex shrink-0", className)}>
-      <span
-        className={cn(
-          "flex items-center justify-center rounded-full bg-surface-strong font-semibold uppercase text-foreground ring-1 ring-border-strong",
-          SIZES[size],
-        )}
-        aria-hidden
-      >
-        {initials(person.name)}
-      </span>
+      <Avatar className={cn("ring-1 ring-border", SIZES[size])}>
+        {url ? <AvatarImage src={url} alt={person.name} className="object-cover" /> : null}
+        <AvatarFallback className="bg-surface-strong font-semibold uppercase text-foreground">
+          {initials(person.name)}
+        </AvatarFallback>
+      </Avatar>
       {showPresence ? (
         <span
           className={cn(
@@ -59,7 +69,7 @@ export function AvatarStack({ people = [], size = "sm", max = 4 }) {
     <div className="flex items-center">
       <div className="flex -space-x-2">
         {shown.map((p) => (
-          <div key={p.id} className="rounded-full ring-2 ring-[#161616]">
+          <div key={p.id} className="rounded-full ring-2 ring-background">
             <UserAvatar person={p} size={size} />
           </div>
         ))}

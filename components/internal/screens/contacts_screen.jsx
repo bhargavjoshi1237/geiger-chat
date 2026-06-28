@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Search, MessageSquare, Phone, Video, UserPlus } from "lucide-react";
 import { ScreenContainer, ScreenHeader, btnPrimary } from "./screen-shell";
 import { UserAvatar } from "@/components/internal/chat/user-avatar";
@@ -17,7 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PEOPLE } from "@/lib/mock/chat-data";
+import { ensureIdentity } from "@/lib/chat/identity";
+import { setMe, hydratePeople, ME } from "@/lib/chat/people-store";
+import { listProfiles } from "@/lib/supabase/chat_profiles";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
@@ -31,7 +33,7 @@ const PRESENCE_BADGE = {
   online: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   away: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   dnd: "bg-red-500/15 text-red-300 border-red-500/30",
-  offline: "bg-zinc-500/15 text-muted-foreground border-zinc-500/30",
+  offline: "bg-surface-hover text-muted-foreground border-border",
 };
 
 function lastActiveLabel(person) {
@@ -41,22 +43,41 @@ function lastActiveLabel(person) {
 }
 
 function emailFor(person) {
-  return `${person.firstName.toLowerCase()}@geiger.studio`;
+  return person.email || `${person.firstName.toLowerCase()}@geiger.app`;
 }
 
 export function ContactsScreen({ onNavigate }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [call, setCall] = useState(null);
+  const [directory, setDirectory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const me = await ensureIdentity();
+      if (me) setMe(me);
+      const profiles = await listProfiles();
+      if (profiles) hydratePeople(profiles);
+      if (!cancelled) {
+        setDirectory((profiles ?? []).filter((p) => p.id !== ME.id));
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const people = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PEOPLE.filter((p) => {
+    return directory.filter((p) => {
       if (filter !== "all" && p.presence !== filter) return false;
       if (!q) return true;
-      return p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q);
+      return p.name.toLowerCase().includes(q) || (p.role || "").toLowerCase().includes(q);
     });
-  }, [query, filter]);
+  }, [directory, query, filter]);
 
   return (
     <>
@@ -98,10 +119,16 @@ export function ContactsScreen({ onNavigate }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {people.length === 0 ? (
+              {loading ? (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={5} className="py-12 text-center text-sm text-text-secondary">
-                    No people match your search.
+                    Loading your team…
+                  </TableCell>
+                </TableRow>
+              ) : people.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={5} className="py-12 text-center text-sm text-text-secondary">
+                    {directory.length === 0 ? "No teammates yet." : "No people match your search."}
                   </TableCell>
                 </TableRow>
               ) : (

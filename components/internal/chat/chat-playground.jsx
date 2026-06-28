@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Hash, MessageSquare } from "lucide-react";
 import { TwoPaneChat } from "./two-pane-chat";
 import { SegmentedTabs } from "@/components/internal/shared/segmented_tabs";
 import { PortalContainerProvider } from "@/components/ui/portal-container";
+import { ME as MOCK_ME, PEOPLE } from "@/lib/mock/chat-data";
+import { hydratePeople, setMe } from "@/lib/chat/people-store";
 
 // Self-contained conversations for the landing demo. Kept local so the
 // playground never touches workspace state — pure exploration, no save/load.
@@ -134,6 +136,13 @@ export function ChatPlayground() {
   const [variant, setVariant] = useState("channel");
   const [container, setContainer] = useState(null);
 
+  // The playground resolves people through the shared store, so seed it with the
+  // demo cast (the real workspace re-seeds its own identity on mount).
+  useEffect(() => {
+    hydratePeople([MOCK_ME, ...PEOPLE]);
+    setMe(MOCK_ME);
+  }, []);
+
   const items = variant === "channel" ? PG_CHANNELS : PG_DMS;
   const title = variant === "channel" ? "Channels" : "Messages";
 
@@ -145,11 +154,11 @@ export function ChatPlayground() {
     >
       <PortalContainerProvider container={container}>
         {/* App-style topbar */}
-        <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[#222] px-3 sm:px-4">
+        <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-[#e7e7e7] text-[11px] font-bold text-[#161616]">G</div>
-            <span className="text-sm font-semibold text-white">Geiger Chat</span>
-            <span className="hidden rounded-full bg-[#222] px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[11px] font-bold text-primary-foreground">G</div>
+            <span className="text-sm font-semibold text-foreground">Geiger Chat</span>
+            <span className="hidden rounded-full bg-surface-card px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
               Playground
             </span>
           </div>

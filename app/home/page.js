@@ -8,11 +8,15 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { PlaceholderScreen } from "@/components/internal/screens/placeholder_screen";
 import { SCREENS } from "@/components/internal/screens";
 import { projectNav } from "@/components/internal/sidebar/projects/sidebar_data";
+import { useCallReminders } from "@/lib/chat/use-call-reminders";
 
 function HomeLayoutContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Drop scheduled-call reminders into the Inbox within the hour before.
+  useCallReminders();
 
   const screenParamKeys = [];
   searchParams.forEach((_, key) => { screenParamKeys.push(key); });

@@ -50,18 +50,18 @@ export function NotificationItem({
       className={`
         group relative flex items-start gap-3 p-4 rounded-2xl border transition-all duration-200 cursor-pointer
         ${isUnread
-          ? "bg-surface-card border-[#2d2d2d] hover:border-[#404040]"
+          ? "bg-surface-card border-border hover:border-border-strong"
           : "bg-surface-card border-transparent hover:bg-surface-subtle hover:border-border"}
       `}
     >
 
-      <div className={`mt-0.5 flex items-center justify-center w-9 h-9 rounded-lg ${bgColor} border border-white/[0.06]`}>
+      <div className={`mt-0.5 flex items-center justify-center w-9 h-9 rounded-lg ${bgColor} border border-border`}>
         <IconComponent className={`w-4 h-4 ${iconColor}`} strokeWidth={1.8} />
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-3 mb-1">
-          <h3 className={`text-[13px] font-medium truncate ${isUnread ? "text-white" : "text-muted-foreground"}`}>
+          <h3 className={`text-[13px] font-medium truncate ${isUnread ? "text-foreground" : "text-muted-foreground"}`}>
             {notification.title}
           </h3>
           <span className="text-[11px] text-text-secondary whitespace-nowrap shrink-0">
@@ -103,7 +103,7 @@ export function NotificationItem({
                 <Button className="px-3 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:bg-surface-active hover:text-foreground transition-colors">
                   {extraContent.options?.[0] || "Decline"}
                 </Button>
-                <Button className="px-3 py-1.5 rounded-lg bg-white text-[11px] font-medium text-black hover:bg-gray-200 transition-colors">
+                <Button className="px-3 py-1.5 rounded-lg bg-primary text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
                   {extraContent.options?.[1] || "Accept"}
                 </Button>
               </div>
@@ -126,7 +126,7 @@ export function NotificationItem({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-[160px] bg-surface-subtle border-border text-muted-foreground"
+          className="w-[160px] border-border text-muted-foreground"
           onClick={(e) => e.stopPropagation()}
         >
           {isUnread && (

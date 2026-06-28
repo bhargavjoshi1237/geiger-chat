@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import { TwoPaneChat } from "@/components/internal/chat/two-pane-chat";
-import { CHANNELS } from "@/lib/mock/chat-data";
+import { ChatScreen } from "@/components/internal/chat/chat-screen";
 
 export function ChannelsScreen() {
-  return <TwoPaneChat title="Channels" items={CHANNELS} variant="channel" />;
+  return <ChatScreen title="Channels" variant="channel" />;
 }

@@ -7,7 +7,7 @@ export function PlaceholderScreen({ title = "Overview", description, icon: Icon 
   return (
     <div className="mx-auto w-full max-w-5xl">
       <div className="mb-8 flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight text-white">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
         <p className="text-sm text-muted-foreground">
           {description || `The ${title} screen lives here. Build it out in components/internal/screens.`}
         </p>

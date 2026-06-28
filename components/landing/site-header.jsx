@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
 import { getUser } from "@/lib/supabase/user";
 import { ProfileDropdown } from "@/components/internal/topbar/dialogue/profile_dropdown";
+import { SuiteMegaMenu } from "@/components/landing/suite-mega-menu";
 
 const assetPrefix = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
@@ -29,9 +29,11 @@ export function SiteHeader({ productName = "Chat", ctaHref = "/home" }) {
             <Image src={`${assetPrefix}/logo1.svg`} alt="Logo" width={20} height={20} />
           </div>
           <span className="truncate bg-gradient-to-r from-zinc-100 to-zinc-400 bg-clip-text text-sm font-bold tracking-tight text-transparent sm:text-base">
-            Geiger {productName}
+            Geiger Studios
           </span>
         </Link>
+
+        <SuiteMegaMenu />
 
         <div className="hidden items-center gap-4 md:flex">
           {user ? (
@@ -46,13 +48,6 @@ export function SiteHeader({ productName = "Chat", ctaHref = "/home" }) {
           ) : (
             <div className="h-8 w-8 rounded-full border border-border bg-surface-subtle" />
           )}
-          <Link
-            href={ctaHref}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-zinc-100 px-4 text-sm font-medium text-zinc-950 transition-colors hover:bg-white"
-          >
-            Open app
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
         </div>
       </div>
     </header>

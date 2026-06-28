@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SystemFavicon } from "@/components/system-favicon";
 import { Toaster } from "@/components/ui/sonner";
 import { BannerProvider } from "@/context/banner-context";
 import { GlobalBanner } from "@/components/internal/banner/global_banner";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <SystemFavicon />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

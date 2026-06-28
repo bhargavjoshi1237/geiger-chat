@@ -69,10 +69,14 @@ export function ProfileDropdown({ children }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {children || (
-          <Button className="w-8 h-8 rounded-full border border-border hover:border-border-strong overflow-hidden ml-1 transition-colors">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="w-8 h-8 p-0 rounded-full border border-border hover:border-border-strong overflow-hidden ml-1 transition-colors"
+          >
             <Avatar className="size-full">
               {pfpUrl && (
-                <AvatarImage src={pfpUrl} alt={displayName} />
+                <AvatarImage src={pfpUrl} alt={displayName} className="object-cover" />
               )}
               <AvatarFallback className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-[10px] font-semibold border-0">
                 {initials}

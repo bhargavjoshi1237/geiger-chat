@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import { Phone, Video, Search, Info, Hash, Pin, Users, ChevronLeft, X } from "lucide-react";
 import { UserAvatar, AvatarStack } from "./user-avatar";
 import { DetailsSheet } from "./details-sheet";
+import { InviteMembersDialog } from "./invite-members-dialog";
 import { PRESENCE } from "./chat-utils";
-import { getPerson } from "@/lib/mock/chat-data";
+import { getPerson } from "@/lib/chat/people-store";
 import { cn } from "@/lib/utils";
 
 function HeaderButton({ icon: Icon, title, onClick, className }) {
@@ -26,7 +27,7 @@ function HeaderButton({ icon: Icon, title, onClick, className }) {
 
 // Top bar of a conversation thread: identity on the left, call/detail actions on
 // the right. On mobile a back button returns to the conversation list.
-export function ThreadHeader({ conversation, onStartCall, onBack, onClose }) {
+export function ThreadHeader({ conversation, onStartCall, onBack, onClose, people = [], onInvite }) {
   const isChannel = conversation.type === "channel";
   const person = isChannel ? null : getPerson(conversation.participantId);
   const members = (conversation.memberIds || []).map(getPerson);
@@ -55,7 +56,7 @@ export function ThreadHeader({ conversation, onStartCall, onBack, onClose }) {
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <h2 className="truncate text-sm font-semibold text-white">
+            <h2 className="truncate text-sm font-semibold text-foreground">
               {isChannel ? conversation.name : person?.name}
             </h2>
             {conversation.pinned ? <Pin className="h-3 w-3 shrink-0 text-text-secondary" /> : null}
@@ -76,6 +77,14 @@ export function ThreadHeader({ conversation, onStartCall, onBack, onClose }) {
           >
             <AvatarStack people={members} max={4} />
           </button>
+        ) : null}
+        {isChannel && onInvite ? (
+          <InviteMembersDialog
+            channelName={conversation.name}
+            people={people}
+            excludeIds={conversation.memberIds || []}
+            onInvite={onInvite}
+          />
         ) : null}
         <HeaderButton title="Search" icon={Search} className="hidden sm:flex" />
         <HeaderButton title="Start audio call" icon={Phone} onClick={() => onStartCall?.("audio")} />
