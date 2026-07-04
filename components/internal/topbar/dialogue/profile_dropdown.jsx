@@ -27,9 +27,13 @@ import {
   ShieldCheck,
   BookMarked,
   ExternalLink,
+  Building2,
+  ChevronsUpDown,
 } from "lucide-react";
 import { getUser } from "@/lib/supabase/user";
 import { Button } from "@/components/ui/button";
+import { useOrg } from "@/lib/chat/org-context";
+import { OrgPickerDialog } from "./org_picker_dialog";
 
 const surfaceStyle = {
   backgroundColor: "var(--surface-dialog)",
@@ -44,7 +48,9 @@ const itemHoverStyle = "hover:bg-surface-active focus:bg-surface-active text-mut
 
 export function ProfileDropdown({ children }) {
   const [user, setUser] = useState(null);
+  const [orgDialogOpen, setOrgDialogOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { currentOrg } = useOrg();
 
   useEffect(() => {
     getUser().then((u) => {
@@ -66,6 +72,7 @@ export function ProfileDropdown({ children }) {
     .slice(0, 2);
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {children || (
@@ -118,6 +125,24 @@ export function ProfileDropdown({ children }) {
         <DropdownMenuSeparator className="bg-surface-hover mx-0" />
 
         <div className="p-1.5">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              className={`${itemBaseStyle} ${itemHoverStyle}`}
+              onSelect={() => setTimeout(() => setOrgDialogOpen(true), 0)}
+            >
+              <Building2 className="size-4 text-muted-foreground" />
+              <span>Switch workspace</span>
+              <span className="ml-auto flex items-center gap-1 min-w-0">
+                <span className="truncate max-w-[110px] text-xs text-text-secondary">
+                  {currentOrg?.name || "None"}
+                </span>
+                <ChevronsUpDown className="size-3.5 shrink-0 text-text-secondary" />
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator className="bg-surface-hover my-1" />
+
           <DropdownMenuGroup>
             <DropdownMenuItem
               className={`${itemBaseStyle} ${itemHoverStyle}`}
@@ -225,5 +250,7 @@ export function ProfileDropdown({ children }) {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+    <OrgPickerDialog open={orgDialogOpen} onOpenChange={setOrgDialogOpen} />
+    </>
   );
 }

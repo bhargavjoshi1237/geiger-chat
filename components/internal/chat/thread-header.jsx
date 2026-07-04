@@ -6,7 +6,8 @@ import { UserAvatar, AvatarStack } from "./user-avatar";
 import { DetailsSheet } from "./details-sheet";
 import { InviteMembersDialog } from "./invite-members-dialog";
 import { PRESENCE } from "./chat-utils";
-import { getPerson } from "@/lib/chat/people-store";
+import { ExternalBadge } from "./external-badge";
+import { getPerson, isExternalPerson } from "@/lib/chat/people-store";
 import { cn } from "@/lib/utils";
 
 function HeaderButton({ icon: Icon, title, onClick, className }) {
@@ -30,6 +31,7 @@ function HeaderButton({ icon: Icon, title, onClick, className }) {
 export function ThreadHeader({ conversation, onStartCall, onBack, onClose, people = [], onInvite }) {
   const isChannel = conversation.type === "channel";
   const person = isChannel ? null : getPerson(conversation.participantId);
+  const external = !isChannel && isExternalPerson(person);
   const members = (conversation.memberIds || []).map(getPerson);
   const presence = person ? PRESENCE[person.presence] || PRESENCE.offline : null;
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -59,10 +61,11 @@ export function ThreadHeader({ conversation, onStartCall, onBack, onClose, peopl
             <h2 className="truncate text-sm font-semibold text-foreground">
               {isChannel ? conversation.name : person?.name}
             </h2>
+            {external ? <ExternalBadge /> : null}
             {conversation.pinned ? <Pin className="h-3 w-3 shrink-0 text-text-secondary" /> : null}
           </div>
           <p className="truncate text-xs text-text-secondary">
-            {isChannel ? conversation.topic : presence?.label}
+            {external ? "Outside your organization" : isChannel ? conversation.topic : presence?.label}
           </p>
         </div>
       </div>

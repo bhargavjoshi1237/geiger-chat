@@ -10,6 +10,7 @@
     "db:push": "node scripts/run-sqls.js"
   },
   "dependencies": {
+    "@geiger/ui": "github:bhargavjoshi1237/geiger-ui#master",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
     "class-variance-authority": "^0.7.1",

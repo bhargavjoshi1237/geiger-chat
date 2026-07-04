@@ -7,14 +7,16 @@ import { CallStage } from "./call-stage";
 import { IncomingCallDialog } from "./incoming-call-dialog";
 import { useCall } from "@/lib/chat/use-call";
 import { ensureIdentity } from "@/lib/chat/identity";
-import { setMe, hydratePeople, getPerson, ME } from "@/lib/chat/people-store";
+import { setMe, hydratePeople, getPerson, ME, setCurrentOrgId, isExternalPerson } from "@/lib/chat/people-store";
+import { useOrg } from "@/lib/chat/org-context";
+import { ExternalContactDialog } from "./external-contact-dialog";
 import {
   listProfiles, findProfile, setPresence, subscribeProfiles, normalizeProfile,
 } from "@/lib/supabase/chat_profiles";
 import {
   listConversations, createChannel, createOrGetDm, inviteMembers,
   setPinned, markRead, leaveConversation, ensurePublicChannelMembership,
-  subscribeMembership, subscribeMemberReads,
+  ensureOrgGeneralChannel, subscribeMembership, subscribeMemberReads,
 } from "@/lib/supabase/chat_conversations";
 import {
   listMessages, sendMessage, subscribeMessages, normalizeMessage, setMessageReactions,
@@ -22,14 +24,33 @@ import {
 
 // Data-owning container shared by the Messages (dm) and Channels (channel)
 // screens. Fetches on mount, subscribes to realtime, and threads optimistic
-// handlers down to the controlled TwoPaneChat.
+// handlers down to the controlled TwoPaneChat. All data is scoped to the
+// current organization from useOrg() so /home is a per-org chat circle.
+// Outer wrapper: reads the current org and remounts the inner container per org
+// (via key). Switching workspaces fully resets chat state — no imperative reset,
+// no leak of the previous org's conversations/messages — and gives the inner
+// container a stable `orgId` prop.
 export function ChatScreen({ title, variant }) {
+  const { currentOrgId, loading: orgLoading } = useOrg();
+  return (
+    <ChatScreenInner
+      key={currentOrgId || "no-org"}
+      title={title}
+      variant={variant}
+      orgId={currentOrgId}
+      orgLoading={orgLoading}
+    />
+  );
+}
+
+function ChatScreenInner({ title, variant, orgId, orgLoading }) {
   const kind = variant; // 'dm' | 'channel'
   const [items, setItems] = useState([]);
   const [people, setPeople] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState(null);
   const [ready, setReady] = useState(false);
+  const [externalPending, setExternalPending] = useState(null); // person awaiting confirm
   const callApi = useCall();
 
   // Refs so realtime callbacks read current values without re-subscribing.
@@ -39,19 +60,36 @@ export function ChatScreen({ title, variant }) {
     activeIdRef.current = activeId;
   }, [activeId]);
 
-  // Initial load: identity -> directory -> public-channel membership -> rows.
+  // Initial load: identity -> directory -> #general bootstrap -> rows. Scoped to
+  // this mount's org (fixed by the remount key on the wrapper).
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me = await ensureIdentity();
+      // No org yet: keep the spinner while the org list resolves; if it resolved
+      // to nothing (user is in no workspace), drop it and show the empty state.
+      if (!orgId) {
+        if (!orgLoading && !cancelled) setLoading(false);
+        return;
+      }
+      // Tell the people-store which org we're in so external contacts can be
+      // flagged consistently across the thread header, list and dialogs.
+      setCurrentOrgId(orgId);
+      const me = await ensureIdentity(orgId);
+      if (cancelled) return;
       if (me) setMe(me);
-      const profiles = await listProfiles();
+      const profiles = await listProfiles(orgId);
+      if (cancelled) return;
       if (profiles) {
         hydratePeople(profiles);
         if (!cancelled) setPeople(profiles.filter((p) => p.id !== ME.id));
       }
-      if (ME.id) await ensurePublicChannelMembership(ME.id);
-      const convs = ME.id ? await listConversations(ME.id, kind) : null;
+      if (ME.id) {
+        // Guarantee the org has a #general and I'm in it, then join any other
+        // public channels — so a brand-new org circle isn't empty.
+        await ensureOrgGeneralChannel(ME.id, orgId);
+        await ensurePublicChannelMembership(ME.id, orgId);
+      }
+      const convs = ME.id ? await listConversations(ME.id, kind, orgId) : null;
       if (!cancelled) {
         setItems(convs ?? []);
         setLoading(false);
@@ -61,12 +99,12 @@ export function ChatScreen({ title, variant }) {
     return () => {
       cancelled = true;
     };
-  }, [kind]);
+  }, [kind, orgId, orgLoading]);
 
   // Re-fetch conversations, preserving already-loaded full message lists.
   const refresh = useCallback(async () => {
-    if (!ME.id) return;
-    const convs = await listConversations(ME.id, kind);
+    if (!ME.id || !orgId) return;
+    const convs = await listConversations(ME.id, kind, orgId);
     if (!convs) return;
     setItems((prev) => {
       const byId = Object.fromEntries(prev.map((c) => [c.id, c]));
@@ -78,7 +116,7 @@ export function ChatScreen({ title, variant }) {
         return c;
       });
     });
-  }, [kind]);
+  }, [kind, orgId]);
 
   // Realtime: a message inserted or updated (reaction / edit) somewhere.
   const onIncoming = useCallback((row, eventType) => {
@@ -148,7 +186,7 @@ export function ChatScreen({ title, variant }) {
     if (!ready || !ME.id) return undefined;
     const unsubMsg = subscribeMessages(onIncoming);
     const unsubMem = subscribeMembership(ME.id, () => refresh());
-    const unsubProfiles = subscribeProfiles(onProfile);
+    const unsubProfiles = subscribeProfiles(onProfile, orgId);
     const unsubReads = subscribeMemberReads(onRead);
     return () => {
       unsubMsg();
@@ -156,7 +194,7 @@ export function ChatScreen({ title, variant }) {
       unsubProfiles();
       unsubReads();
     };
-  }, [ready, onIncoming, refresh, onProfile, onRead]);
+  }, [ready, orgId, onIncoming, refresh, onProfile, onRead]);
 
   // Presence lifecycle: mark myself online while the chat is mounted and the tab
   // is visible, away when hidden, and offline on leave. A heartbeat keeps
@@ -249,6 +287,7 @@ export function ChatScreen({ title, variant }) {
       visibility: draft.visibility,
       createdBy: ME.id,
       memberIds: draft.memberIds,
+      organizationId: orgId,
     });
     if (created) {
       loadedConvs.current.add(created.id);
@@ -258,7 +297,25 @@ export function ChatScreen({ title, variant }) {
     } else {
       toast.error("Couldn't create the channel.");
     }
-  }, []);
+  }, [orgId]);
+
+  // Actually open (or create) the DM with a resolved person and select it.
+  const openDmWith = useCallback(async (person) => {
+    hydratePeople([person]);
+    const conv = await createOrGetDm(ME.id, person.id, orgId);
+    if (!conv) {
+      toast.error("Couldn't start the conversation.");
+      return;
+    }
+    setItems((prev) => (prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev]));
+    setActiveId(conv.id);
+    if (!loadedConvs.current.has(conv.id)) {
+      const msgs = await listMessages(conv.id);
+      loadedConvs.current.add(conv.id);
+      if (msgs) setItems((prev) => prev.map((c) => (c.id === conv.id ? { ...c, messages: msgs } : c)));
+    }
+    if (ME.id) markRead(conv.id, ME.id);
+  }, [orgId]);
 
   const handleStartDm = useCallback(async (personOrQuery) => {
     if (!ME.id) {
@@ -277,21 +334,20 @@ export function ChatScreen({ title, variant }) {
       if (person?.id === ME.id) toast.error("That's you.");
       return;
     }
-    hydratePeople([person]);
-    const conv = await createOrGetDm(ME.id, person.id);
-    if (!conv) {
-      toast.error("Couldn't start the conversation.");
+    // Reaching someone outside the current org — confirm before opening the
+    // thread so it's clear the conversation leaves the org's circle.
+    if (isExternalPerson(person)) {
+      setExternalPending(person);
       return;
     }
-    setItems((prev) => (prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev]));
-    setActiveId(conv.id);
-    if (!loadedConvs.current.has(conv.id)) {
-      const msgs = await listMessages(conv.id);
-      loadedConvs.current.add(conv.id);
-      if (msgs) setItems((prev) => prev.map((c) => (c.id === conv.id ? { ...c, messages: msgs } : c)));
-    }
-    if (ME.id) markRead(conv.id, ME.id);
-  }, []);
+    await openDmWith(person);
+  }, [openDmWith]);
+
+  const confirmExternalDm = useCallback(async () => {
+    const person = externalPending;
+    setExternalPending(null);
+    if (person) await openDmWith(person);
+  }, [externalPending, openDmWith]);
 
   const handleInvite = useCallback(async (profileIds) => {
     const id = activeIdRef.current;
@@ -394,6 +450,11 @@ export function ChatScreen({ title, variant }) {
           onDecline={callApi.decline}
         />
       ) : null}
+      <ExternalContactDialog
+        person={externalPending}
+        onConfirm={confirmExternalDm}
+        onCancel={() => setExternalPending(null)}
+      />
     </>
   );
 }

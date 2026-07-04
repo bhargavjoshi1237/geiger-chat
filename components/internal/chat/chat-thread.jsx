@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Check, CheckCheck } from "lucide-react";
+import { Check, CheckCheck, Globe } from "lucide-react";
 import { ThreadHeader } from "./thread-header";
 import { MessageGroup } from "./message-group";
 import { CallEventCard } from "./call-event-card";
 import { MessageInfoDialog } from "./message-info-dialog";
 import { TypingIndicator } from "./typing-indicator";
 import { Composer } from "./composer";
-import { ME, getPerson } from "@/lib/chat/people-store";
+import { ME, getPerson, isExternalPerson } from "@/lib/chat/people-store";
+import { useOrg } from "@/lib/chat/org-context";
 
 // Group consecutive messages from the same author so the avatar + name only
 // render once per run, the way most chat clients display threads.
@@ -112,6 +113,12 @@ export function ChatThread({ conversation, onStartCall, autoReply, onSendMessage
       ? getPerson((conversation.memberIds || []).find((mid) => mid !== ME.id))
       : getPerson(conversation.participantId);
 
+  const { currentOrg } = useOrg();
+  const externalPerson =
+    conversation.type === "dm" && isExternalPerson(getPerson(conversation.participantId))
+      ? getPerson(conversation.participantId)
+      : null;
+
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <ThreadHeader
@@ -122,6 +129,15 @@ export function ChatThread({ conversation, onStartCall, autoReply, onSendMessage
         people={people}
         onInvite={onInvite}
       />
+      {externalPerson ? (
+        <div className="flex items-center gap-2 border-b border-amber-500/15 bg-amber-500/[0.06] px-4 py-2 text-xs text-amber-500/90 md:px-6">
+          <Globe className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0">
+            <span className="font-medium">{externalPerson.firstName}</span> is outside{" "}
+            {currentOrg?.name || "your organization"} — this is an external conversation.
+          </span>
+        </div>
+      ) : null}
       <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto py-5 scrollbar-subtle">
         {groups.map((group, i) =>
           group.call ? (

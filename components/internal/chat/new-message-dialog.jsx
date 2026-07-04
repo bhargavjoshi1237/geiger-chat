@@ -5,6 +5,7 @@ import { Search, PenSquare, UserPlus } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import { searchProfiles } from "@/lib/supabase/chat_profiles";
 import { ME } from "@/lib/chat/people-store";
+import { useOrg } from "@/lib/chat/org-context";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader,
   DialogTitle, DialogTrigger,
@@ -15,13 +16,14 @@ import {
 // address that isn't in the directory calls onStartDm({ query }) so the screen
 // can resolve it server-side.
 export function NewMessageDialog({ people = [], onStartDm }) {
+  const { currentOrgId } = useOrg();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [remote, setRemote] = useState([]);
 
   // Live directory search: query the users table by name/username/email so
   // anyone is findable, not just the preloaded roster. Debounced; merged with
-  // the local list below.
+  // the local list below. Scoped to the current org.
   useEffect(() => {
     const q = query.trim();
     const t = setTimeout(() => {
@@ -29,10 +31,10 @@ export function NewMessageDialog({ people = [], onStartDm }) {
         setRemote([]);
         return;
       }
-      searchProfiles(q).then((rows) => setRemote(rows || []));
+      searchProfiles(q, { organizationId: currentOrgId }).then((rows) => setRemote(rows || []));
     }, 250);
     return () => clearTimeout(t);
-  }, [query, open]);
+  }, [query, open, currentOrgId]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

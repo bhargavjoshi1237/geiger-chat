@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { ensureIdentity } from "@/lib/chat/identity";
 import { setMe, hydratePeople, ME } from "@/lib/chat/people-store";
+import { useOrg } from "@/lib/chat/org-context";
 import { listProfiles } from "@/lib/supabase/chat_profiles";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ function emailFor(person) {
 }
 
 export function ContactsScreen({ onNavigate }) {
+  const { currentOrgId } = useOrg();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [call, setCall] = useState(null);
@@ -56,9 +58,11 @@ export function ContactsScreen({ onNavigate }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me = await ensureIdentity();
+      if (!currentOrgId) return; // wait for the org; keep the initial loading state
+      const me = await ensureIdentity(currentOrgId);
+      if (cancelled) return;
       if (me) setMe(me);
-      const profiles = await listProfiles();
+      const profiles = await listProfiles(currentOrgId);
       if (profiles) hydratePeople(profiles);
       if (!cancelled) {
         setDirectory((profiles ?? []).filter((p) => p.id !== ME.id));
@@ -68,7 +72,7 @@ export function ContactsScreen({ onNavigate }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [currentOrgId]);
 
   const people = useMemo(() => {
     const q = query.trim().toLowerCase();

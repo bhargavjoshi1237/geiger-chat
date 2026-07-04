@@ -5,11 +5,12 @@ import { Search, Check } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import { searchProfiles } from "@/lib/supabase/chat_profiles";
 import { ME } from "@/lib/chat/people-store";
+import { useOrg } from "@/lib/chat/org-context";
 import { cn } from "@/lib/utils";
 
 // Searchable multi-select roster used by the create-channel and invite dialogs.
 // Matches on name, username or email so people are findable the way they're
-// invited. Selection state is owned by the parent.
+// invited. Selection state is owned by the parent. Scoped to the current org.
 export function PeoplePicker({
   people = [],
   selectedIds = [],
@@ -18,12 +19,14 @@ export function PeoplePicker({
   placeholder = "Search people by name, username or email",
   emptyLabel = "No people found.",
 }) {
+  const { currentOrgId } = useOrg();
   const [query, setQuery] = useState("");
   const [remote, setRemote] = useState([]);
   const selected = new Set(selectedIds);
 
   // Live directory search by name/username/email against the users table, so
-  // people outside the preloaded roster are still addable. Debounced.
+  // people outside the preloaded roster are still addable. Debounced. Scoped to
+  // the current org so only teammates in this workspace can be picked.
   useEffect(() => {
     const q = query.trim();
     const t = setTimeout(() => {
@@ -31,10 +34,10 @@ export function PeoplePicker({
         setRemote([]);
         return;
       }
-      searchProfiles(q).then((rows) => setRemote(rows || []));
+      searchProfiles(q, { organizationId: currentOrgId }).then((rows) => setRemote(rows || []));
     }, 250);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, currentOrgId]);
 
   const results = useMemo(() => {
     const ex = new Set(excludeIds);

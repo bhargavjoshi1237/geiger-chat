@@ -7,13 +7,15 @@ import { fromNow, lastMessagePreview, previewAuthor } from "./chat-utils";
 import { ConversationRowMenu } from "./conversation-row-menu";
 import { NewMessageDialog } from "./new-message-dialog";
 import { CreateChannelDialog } from "./create-channel-dialog";
-import { getPerson } from "@/lib/chat/people-store";
+import { getPerson, isExternalPerson } from "@/lib/chat/people-store";
+import { ExternalBadge } from "./external-badge";
 import { cn } from "@/lib/utils";
 
 function ConversationRow({ conversation, active, onSelect, variant, onPin, onMarkRead, onLeave }) {
   const isChannel = conversation.type === "channel";
   const person = isChannel ? null : getPerson(conversation.participantId);
   const title = isChannel ? conversation.name : person?.name;
+  const external = !isChannel && isExternalPerson(person);
 
   return (
     <ConversationRowMenu
@@ -46,8 +48,11 @@ function ConversationRow({ conversation, active, onSelect, variant, onPin, onMar
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <span className={cn("truncate text-sm", active || conversation.unread ? "font-semibold text-foreground" : "font-medium text-foreground")}>
-              {isChannel ? `#${title}` : title}
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className={cn("truncate text-sm", active || conversation.unread ? "font-semibold text-foreground" : "font-medium text-foreground")}>
+                {isChannel ? `#${title}` : title}
+              </span>
+              {external ? <ExternalBadge label="Ext." className="px-1" /> : null}
             </span>
             <span className="shrink-0 text-[11px] text-text-secondary">{fromNow(conversation.lastActivity)}</span>
           </div>

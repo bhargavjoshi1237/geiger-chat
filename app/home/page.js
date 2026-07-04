@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useCallback } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ProjectSidebar } from "@/components/internal/sidebar/projects/project_sidebar";
 import { ProjectTopbar } from "@/components/internal/topbar/projects/topbar";
@@ -9,11 +9,41 @@ import { PlaceholderScreen } from "@/components/internal/screens/placeholder_scr
 import { SCREENS } from "@/components/internal/screens";
 import { projectNav } from "@/components/internal/sidebar/projects/sidebar_data";
 import { useCallReminders } from "@/lib/chat/use-call-reminders";
+import { getUser } from "@/lib/supabase/user";
+import { OrgProvider } from "@/lib/chat/org-context";
+
+// geiger-dash login route. The dash app proxies /chat -> geiger-chat in
+// production, so a relative /login resolves on the dash host. Override via env
+// when the apps live on separate origins.
+const LOGIN_URL = process.env.NEXT_PUBLIC_DASH_LOGIN_URL || "/login?next=/chat/home";
 
 function HomeLayoutContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [authState, setAuthState] = useState("checking"); // 'checking' | 'ok' | 'unauth'
+
+  // Auth gate: /home requires a real Supabase auth session. Without one we send
+  // the user to the geiger-dash login (shared Supabase project) and back here.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const user = await getUser().catch(() => null);
+      if (cancelled) return;
+      if (user?.id) {
+        setAuthState("ok");
+      } else {
+        // Preserve any active tab so returning lands back where they were.
+        const ret = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+        const sep = LOGIN_URL.includes("?") ? "&" : "?";
+        router.replace(`${LOGIN_URL}${sep}next=${encodeURIComponent(ret)}`);
+        setAuthState("unauth");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, pathname, searchParams]);
 
   // Drop scheduled-call reminders into the Inbox within the hour before.
   useCallReminders();
@@ -37,6 +67,17 @@ function HomeLayoutContent() {
     projectNav.find((item) => item.title === currentTab) || projectNav[0];
 
   const ActiveScreen = SCREENS[activeItem.title];
+
+  if (authState === "checking") {
+    return (
+      <div className="flex flex-col h-[100dvh] w-full bg-background items-center justify-center gap-3">
+        <div className="w-5 h-5 rounded-full border-2 border-border-strong border-t-[#e7e7e7] animate-spin" />
+        <span className="text-text-tertiary text-sm">Loading...</span>
+      </div>
+    );
+  }
+  // While unauthed we briefly keep the spinner; the redirect is in flight.
+  if (authState === "unauth") return null;
 
   return (
     <div className="flex-col h-[100dvh] w-full bg-background text-foreground font-sans overflow-hidden selection:bg-surface-strong flex">
@@ -75,7 +116,9 @@ export default function HomePage() {
         </div>
       }
     >
-      <HomeLayoutContent />
+      <OrgProvider>
+        <HomeLayoutContent />
+      </OrgProvider>
     </Suspense>
   );
 }
