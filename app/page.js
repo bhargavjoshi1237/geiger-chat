@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, MessageSquare, Hash, Users, Phone, Paperclip, Bell } from "lucide-react";
 import { SiteHeader } from "@/components/landing/site-header";
-import LandingChatShowcase from "@/components/landing/landing-chat-showcase";
+import LandingChatShowcase from "@/components/chat-playground/LandingChatShowcase";
 
 const assetPrefix = process.env.NEXT_PUBLIC_BASE_PATH || "";
 

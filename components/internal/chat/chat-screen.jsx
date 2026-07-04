@@ -7,7 +7,7 @@ import { CallStage } from "./call-stage";
 import { IncomingCallDialog } from "./incoming-call-dialog";
 import { useCall } from "@/lib/chat/use-call";
 import { ensureIdentity } from "@/lib/chat/identity";
-import { setMe, hydratePeople, getPerson, ME, setCurrentOrgId, isExternalPerson } from "@/lib/chat/people-store";
+import { setMe, hydratePeople, getPerson, ME, setCurrentOrgId, setOrgMemberIds, isExternalPerson, ensurePeople } from "@/lib/chat/people-store";
 import { useOrg } from "@/lib/chat/org-context";
 import { ExternalContactDialog } from "./external-contact-dialog";
 import {
@@ -25,6 +25,7 @@ import {
   listThreads, createThread, renameThread, softDeleteThread, subscribeThreads,
 } from "@/lib/supabase/chat_threads";
 import { listFilesByConversation } from "@/lib/supabase/chat_files";
+import { listOrgMembers } from "@/lib/supabase/chat_orgs";
 import { buildOptimisticAttachments, uploadAttachments, revokeOptimistic } from "@/lib/chat/attachments";
 
 const PAGE = 25;
@@ -59,6 +60,7 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
   const [ready, setReady] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false); // fetching an older page for the active conv
   const [filesLoading, setFilesLoading] = useState(false); // fetching the Files panel for the active conv
+  const [, setPeopleTick] = useState(0); // bumped when late-hydrated authors need a re-render
   const [externalPending, setExternalPending] = useState(null); // person awaiting confirm
   const callApi = useCall();
 
@@ -87,6 +89,13 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
       // Tell the people-store which org we're in so external contacts can be
       // flagged consistently across the thread header, list and dialogs.
       setCurrentOrgId(orgId);
+      // Load the org's authoritative roster so "external" is decided by real
+      // membership, not a person's last-active org (they may be in several orgs).
+      listOrgMembers(orgId).then((members) => {
+        if (cancelled || !members) return;
+        setOrgMemberIds(members.map((m) => m.userId));
+        setPeopleTick((t) => t + 1);
+      });
       const me = await ensureIdentity(orgId);
       if (cancelled) return;
       if (me) setMe(me);
@@ -108,6 +117,16 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
         setLoading(false);
         setReady(true);
       }
+      // Resolve names for DM partners / channel members who aren't in the
+      // org-scoped directory (e.g. moved to another org) so the list and threads
+      // don't render "Unknown".
+      const memberIds = [];
+      for (const c of convs ?? []) {
+        if (c.participantId) memberIds.push(c.participantId);
+        if (c.memberIds) memberIds.push(...c.memberIds);
+      }
+      const added = await ensurePeople(memberIds);
+      if (!cancelled && added.length) setPeopleTick((t) => t + 1);
     })();
     return () => {
       cancelled = true;
@@ -130,6 +149,15 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
       });
     });
   }, [kind, orgId]);
+
+  // Resolve any author / member profiles that aren't in the org-scoped directory
+  // (e.g. a teammate whose profile now points at another org) so getPerson()
+  // renders a real name instead of "Unknown". Re-renders the tree if any were
+  // newly hydrated.
+  const ensure = useCallback(async (ids) => {
+    const added = await ensurePeople(ids);
+    if (added.length) setPeopleTick((t) => t + 1);
+  }, []);
 
   // Refresh a conversation's thread list (reply-count indicators + panel list).
   const refreshThreadsFor = useCallback(async (convId) => {
@@ -178,8 +206,9 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
       const next = prev.filter((_, i) => i !== idx);
       return [updated, ...next];
     });
+    if (row.author_id) ensure([row.author_id]);
     if (eventType !== "UPDATE" && convId === activeIdRef.current && ME.id) markRead(convId, ME.id);
-  }, [refreshThreadsFor]);
+  }, [refreshThreadsFor, ensure]);
 
   // A profile changed somewhere (presence / display). Re-hydrate the directory
   // so getPerson() reads fresh values, and bump `people` to re-render the tree.
@@ -284,6 +313,7 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
       const msgs = await listMessages(id, { limit: PAGE });
       loadedConvs.current.add(id);
       if (msgs) {
+        await ensure(msgs.map((m) => m.authorId));
         setItems((prev) => prev.map((c) => (c.id === id ? { ...c, messages: msgs, hasMore: msgs.length === PAGE, unread: 0 } : c)));
       }
     } else {
@@ -291,7 +321,7 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
     }
     refreshThreadsFor(id);
     if (ME.id) markRead(id, ME.id);
-  }, [refreshThreadsFor]);
+  }, [refreshThreadsFor, ensure]);
 
   // Infinite scroll: prepend the previous page of the active conversation.
   const handleLoadOlder = useCallback(async (id) => {
@@ -303,6 +333,7 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
     const older = await listMessages(id, { before: oldest, limit: PAGE });
     setLoadingOlder(false);
     if (!older) return;
+    await ensure(older.map((m) => m.authorId));
     setItems((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
@@ -311,7 +342,7 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
         return { ...c, messages: [...fresh, ...(c.messages || [])], hasMore: older.length === PAGE };
       }),
     );
-  }, []);
+  }, [ensure]);
 
   // Load the Files panel for a conversation (lazy, on first open).
   const handleLoadFiles = useCallback(async (id) => {
@@ -470,11 +501,14 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
     if (!loadedConvs.current.has(conv.id)) {
       const msgs = await listMessages(conv.id, { limit: PAGE });
       loadedConvs.current.add(conv.id);
-      if (msgs) setItems((prev) => prev.map((c) => (c.id === conv.id ? { ...c, messages: msgs, hasMore: msgs.length === PAGE } : c)));
+      if (msgs) {
+        await ensure(msgs.map((m) => m.authorId));
+        setItems((prev) => prev.map((c) => (c.id === conv.id ? { ...c, messages: msgs, hasMore: msgs.length === PAGE } : c)));
+      }
     }
     refreshThreadsFor(conv.id);
     if (ME.id) markRead(conv.id, ME.id);
-  }, [orgId, refreshThreadsFor]);
+  }, [orgId, refreshThreadsFor, ensure]);
 
   const handleStartDm = useCallback(async (personOrQuery) => {
     if (!ME.id) {

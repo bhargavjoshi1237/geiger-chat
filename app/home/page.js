@@ -11,6 +11,7 @@ import { projectNav } from "@/components/internal/sidebar/projects/sidebar_data"
 import { useCallReminders } from "@/lib/chat/use-call-reminders";
 import { getUser } from "@/lib/supabase/user";
 import { OrgProvider } from "@/lib/chat/org-context";
+import { disablePlaygroundMode } from "@/lib/chat/playground";
 
 // geiger-dash login route. The dash app proxies /chat -> geiger-chat in
 // production, so a relative /login resolves on the dash host. Override via env
@@ -18,6 +19,11 @@ import { OrgProvider } from "@/lib/chat/org-context";
 const LOGIN_URL = process.env.NEXT_PUBLIC_DASH_LOGIN_URL || "/login?next=/chat/home";
 
 function HomeLayoutContent() {
+  // The real workspace never runs in playground data mode. Turn it off during
+  // render (before the screens' fetch effects) so a same-session visit to the
+  // landing playground can't leave the shared flag on for /home.
+  disablePlaygroundMode();
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

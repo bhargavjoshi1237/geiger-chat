@@ -15,7 +15,7 @@ import {
   listMessages, sendMessage, subscribeMessages, normalizeMessage, setMessageReactions,
 } from "@/lib/supabase/chat_messages";
 import { buildOptimisticAttachments, uploadAttachments, revokeOptimistic } from "@/lib/chat/attachments";
-import { ME, getPerson } from "@/lib/chat/people-store";
+import { ME, getPerson, ensurePeople } from "@/lib/chat/people-store";
 
 const PAGE = 25;
 
@@ -39,6 +39,7 @@ function ThreadView({ conversation, thread, onActivity }) {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [, bumpPeople] = useState(0); // re-render when a late author hydrates
   const scrollRef = useRef(null);
   const topRef = useRef(null);
   const messagesRef = useRef([]);
@@ -47,12 +48,19 @@ function ThreadView({ conversation, thread, onActivity }) {
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
 
+  // Resolve author names not in the org-scoped directory, then re-render.
+  const ensureAuthors = useCallback((ids) => {
+    ensurePeople(ids).then((added) => { if (added.length) bumpPeople((t) => t + 1); });
+  }, []);
+
   // Initial page. ThreadView is keyed on thread.id (remounted per thread), so
   // `loading` starts true and this runs once per mount.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const rows = await listMessages(conversation.id, { threadId: thread.id, limit: PAGE });
+      if (cancelled) return;
+      await ensurePeople((rows ?? []).map((m) => m.authorId));
       if (cancelled) return;
       setMessages(rows ?? []);
       setHasMore((rows?.length ?? 0) === PAGE);
@@ -66,6 +74,7 @@ function ThreadView({ conversation, thread, onActivity }) {
     const unsub = subscribeMessages((row, eventType) => {
       if (row?.thread_id !== thread.id) return;
       const msg = normalizeMessage(row);
+      if (row.author_id) ensureAuthors([row.author_id]);
       setMessages((prev) => {
         const idx = prev.findIndex((m) => m.id === row.id);
         if (idx >= 0) {
@@ -78,7 +87,7 @@ function ThreadView({ conversation, thread, onActivity }) {
       });
     });
     return unsub;
-  }, [thread.id]);
+  }, [thread.id, ensureAuthors]);
 
   // Stick to bottom for new messages; restore position when prepending older.
   useLayoutEffect(() => {
@@ -101,6 +110,7 @@ function ThreadView({ conversation, thread, onActivity }) {
     const older = await listMessages(conversation.id, {
       threadId: thread.id, before: current[0].createdAt, limit: PAGE,
     });
+    await ensurePeople((older ?? []).map((m) => m.authorId));
     stick.current = false;
     setMessages((prev) => [...(older ?? []), ...prev]);
     setHasMore((older?.length ?? 0) === PAGE);
