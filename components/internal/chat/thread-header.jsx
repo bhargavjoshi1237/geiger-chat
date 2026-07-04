@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Phone, Video, Search, Info, Hash, Pin, Users, ChevronLeft, X } from "lucide-react";
+import { Phone, Video, Search, Info, Hash, Pin, Users, ChevronLeft, X, MessagesSquare, Paperclip } from "lucide-react";
 import { UserAvatar, AvatarStack } from "./user-avatar";
 import { DetailsSheet } from "./details-sheet";
 import { InviteMembersDialog } from "./invite-members-dialog";
@@ -26,9 +26,38 @@ function HeaderButton({ icon: Icon, title, onClick, className }) {
   );
 }
 
+// Header toggle for a right-side panel (Threads / Files), highlighted when its
+// panel is open, with an optional count badge.
+function PanelButton({ icon: Icon, title, onClick, active, count, className }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "relative flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+        active
+          ? "bg-surface-active text-foreground"
+          : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+        className,
+      )}
+    >
+      <Icon className="h-[18px] w-[18px]" />
+      {count ? (
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 // Top bar of a conversation thread: identity on the left, call/detail actions on
 // the right. On mobile a back button returns to the conversation list.
-export function ThreadHeader({ conversation, onStartCall, onBack, onClose, people = [], onInvite }) {
+export function ThreadHeader({
+  conversation, onStartCall, onBack, onClose, people = [], onInvite,
+  onToggleThreads, onToggleFiles, activePanel, threadCount = 0, fileCount = 0,
+}) {
   const isChannel = conversation.type === "channel";
   const person = isChannel ? null : getPerson(conversation.participantId);
   const external = !isChannel && isExternalPerson(person);
@@ -87,6 +116,24 @@ export function ThreadHeader({ conversation, onStartCall, onBack, onClose, peopl
             people={people}
             excludeIds={conversation.memberIds || []}
             onInvite={onInvite}
+          />
+        ) : null}
+        {onToggleThreads ? (
+          <PanelButton
+            title="Threads"
+            icon={MessagesSquare}
+            onClick={onToggleThreads}
+            active={activePanel === "threads"}
+            count={threadCount}
+          />
+        ) : null}
+        {onToggleFiles ? (
+          <PanelButton
+            title="Files"
+            icon={Paperclip}
+            onClick={onToggleFiles}
+            active={activePanel === "files"}
+            count={fileCount}
           />
         ) : null}
         <HeaderButton title="Search" icon={Search} className="hidden sm:flex" />

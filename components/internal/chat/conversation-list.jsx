@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Search, Hash, MessageSquare } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import { fromNow, lastMessagePreview, previewAuthor } from "./chat-utils";
@@ -17,6 +17,14 @@ function ConversationRow({ conversation, active, onSelect, variant, onPin, onMar
   const title = isChannel ? conversation.name : person?.name;
   const external = !isChannel && isExternalPerson(person);
 
+  // The list re-orders live — a new/sent message bumps a conversation to the top,
+  // and rows are keyed by id, so React physically moves the DOM node. With a plain
+  // onClick, a re-order landing between pointer-down and pointer-up moves the row
+  // out from under the cursor and the click never fires ("sometimes clicking does
+  // nothing"). Select on pointer-down for mouse so the press alone commits the
+  // choice; touch/keyboard keep click so a scroll gesture isn't hijacked.
+  const pointerSelectedAt = useRef(0);
+
   return (
     <ConversationRowMenu
       conversation={conversation}
@@ -27,7 +35,16 @@ function ConversationRow({ conversation, active, onSelect, variant, onPin, onMar
     >
       <button
         type="button"
-        onClick={() => onSelect(conversation.id)}
+        onPointerDown={(e) => {
+          if (e.pointerType === "mouse" && e.button === 0) {
+            pointerSelectedAt.current = Date.now();
+            onSelect(conversation.id);
+          }
+        }}
+        onClick={() => {
+          if (Date.now() - pointerSelectedAt.current < 700) return; // already selected on press
+          onSelect(conversation.id);
+        }}
         className={cn(
           "group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors",
           active ? "bg-surface-hover" : "hover:bg-surface-card",

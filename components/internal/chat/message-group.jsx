@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { Reply as ReplyIcon } from "lucide-react";
+import { Reply as ReplyIcon, MessagesSquare } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import { MessageActions } from "./message-actions";
+import { MessageAttachments } from "./message-attachments";
 import { clockTime, REACTION_MAP } from "./chat-utils";
 import { ME, getPerson } from "@/lib/chat/people-store";
 import { cn } from "@/lib/utils";
@@ -74,10 +75,29 @@ function Reactions({ msg, onReact }) {
   );
 }
 
+// A "N replies" pill under a message that has a thread rooted on it. Clicking
+// opens that thread in the right panel.
+function ThreadPill({ thread, onOpen }) {
+  if (!thread) return null;
+  const count = thread.replyCount || 0;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen?.(thread)}
+      className="mt-1 flex items-center gap-1.5 rounded-full border border-border bg-surface-card px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-surface-hover hover:text-foreground"
+    >
+      <MessagesSquare className="h-3.5 w-3.5 text-primary" />
+      <span className="font-medium text-foreground">
+        {count > 0 ? `${count} ${count === 1 ? "reply" : "replies"}` : "Thread"}
+      </span>
+    </button>
+  );
+}
+
 // A run of consecutive messages from one author: avatar + name render once, with
 // each bubble exposing its own hover action toolbar, optional reply quote, and
 // reaction pills.
-export function MessageGroup({ group, onReact, onReply, onInfo }) {
+export function MessageGroup({ group, onReact, onReply, onInfo, onStartThread, threadsByRoot, onOpenThread }) {
   const author = getPerson(group.authorId);
   const isMe = group.authorId === ME.id;
   const first = group.items[0];
@@ -104,17 +124,23 @@ export function MessageGroup({ group, onReact, onReply, onInfo }) {
             >
               <div className={cn("flex min-w-0 flex-col", isMe && "items-end")}>
                 {msg.replyTo ? <ReplyQuote replyTo={msg.replyTo} isMe={isMe} /> : null}
-                <div
-                  className={cn(
-                    "w-fit rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-                    isMe
-                      ? "rounded-tr-md bg-[#e7e7e7] text-[#161616]"
-                      : "rounded-tl-md border border-border bg-surface-card text-foreground",
-                  )}
-                >
-                  {msg.text}
-                </div>
+                {msg.text ? (
+                  <div
+                    className={cn(
+                      "w-fit rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
+                      isMe
+                        ? "rounded-tr-md bg-[#e7e7e7] text-[#161616]"
+                        : "rounded-tl-md border border-border bg-surface-card text-foreground",
+                    )}
+                  >
+                    {msg.text}
+                  </div>
+                ) : null}
+                <MessageAttachments attachments={msg.attachments} isMe={isMe} />
                 <Reactions msg={msg} onReact={onReact} />
+                {threadsByRoot ? (
+                  <ThreadPill thread={threadsByRoot[msg.id]} onOpen={onOpenThread} />
+                ) : null}
               </div>
               <MessageActions
                 msg={msg}
@@ -122,6 +148,7 @@ export function MessageGroup({ group, onReact, onReply, onInfo }) {
                 onReact={onReact}
                 onReply={onReply}
                 onInfo={onInfo}
+                onStartThread={onStartThread}
               />
             </div>
           ))}

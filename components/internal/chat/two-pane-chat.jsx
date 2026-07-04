@@ -53,6 +53,14 @@ export function TwoPaneChat({
   onPin,
   onMarkRead,
   onLeave,
+  onLoadOlder,
+  loadingOlder = false,
+  onLoadFiles,
+  filesLoading = false,
+  onCreateThread,
+  onRenameThread,
+  onDeleteThread,
+  onRefreshThreads,
 }) {
   const [showThreadMobile, setShowThreadMobile] = useState(false);
   const [call, setCall] = useState(null); // { kind }
@@ -125,6 +133,17 @@ export function TwoPaneChat({
             people={people}
             onBack={() => setShowThreadMobile(false)}
             onClose={close}
+            onLoadOlder={onLoadOlder}
+            hasMore={!!active.hasMore}
+            loadingOlder={loadingOlder}
+            threads={active.threads || []}
+            files={active.files || []}
+            filesLoading={filesLoading}
+            onLoadFiles={onLoadFiles}
+            onCreateThread={onCreateThread}
+            onRenameThread={onRenameThread}
+            onDeleteThread={onDeleteThread}
+            onRefreshThreads={onRefreshThreads}
           />
         ) : (
           <EmptyThread variant={variant} />

@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import { Plus, Smile, Paperclip, AtSign, SendHorizonal, Reply, X, Phone, Video } from "lucide-react";
+import { Plus, Smile, Paperclip, AtSign, SendHorizonal, Reply, X, Phone, Video, FileText, ImageIcon } from "lucide-react";
+import { toast } from "sonner";
+import { fileKind, formatSize } from "@/lib/supabase/chat_storage";
 import { cn } from "@/lib/utils";
+
+// Attachments over this size are rejected client-side (matches the design's cap).
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 // Slash commands surfaced when the input starts with "/". `action` commands fire
 // onCommand(id) (e.g. start a call); `insert` commands drop text into the box.
@@ -16,11 +21,13 @@ const SLASH_COMMANDS = [
 // Message input row. Auto-grows up to a few lines and submits on Enter
 // (Shift+Enter inserts a newline). Typing "/" opens a command menu. When
 // `replyingTo` is set, a preview bar sits above the input until sent/cancelled.
-export function Composer({ placeholder = "Write a message…", onSend, onCommand, disabled, replyingTo, onCancelReply }) {
+export function Composer({ placeholder = "Write a message…", onSend, onCommand, disabled, replyingTo, onCancelReply, allowAttachments = false }) {
   const [value, setValue] = useState("");
   const [active, setActive] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  const [files, setFiles] = useState([]); // pending File[] to send with the message
   const ref = useRef(null);
+  const fileRef = useRef(null);
 
   // The slash menu shows while the text is just "/word" (no space yet).
   const matches = useMemo(() => {
@@ -37,11 +44,30 @@ export function Composer({ placeholder = "Write a message…", onSend, onCommand
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   };
 
+  const pickFiles = () => fileRef.current?.click();
+
+  const onFilesPicked = (e) => {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting the same file later
+    const accepted = [];
+    for (const f of picked) {
+      if (f.size > MAX_FILE_BYTES) {
+        toast.error(`${f.name} is over 25 MB.`);
+        continue;
+      }
+      accepted.push(f);
+    }
+    if (accepted.length) setFiles((prev) => [...prev, ...accepted]);
+  };
+
+  const removeFile = (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx));
+
   const submit = () => {
     const trimmed = value.trim();
-    if (!trimmed) return;
-    onSend?.(trimmed);
+    if (!trimmed && files.length === 0) return;
+    onSend?.(trimmed, files);
     setValue("");
+    setFiles([]);
     if (ref.current) ref.current.style.height = "auto";
   };
 
@@ -147,9 +173,49 @@ export function Composer({ placeholder = "Write a message…", onSend, onCommand
           </button>
         </div>
       ) : null}
+      {allowAttachments && files.length ? (
+        <div className="mx-1 mb-1.5 flex flex-wrap gap-2">
+          {files.map((f, i) => {
+            const isImage = fileKind(f.name) === "image";
+            const Icon = isImage ? ImageIcon : FileText;
+            return (
+              <div
+                key={`${f.name}-${i}`}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface-card py-1.5 pl-2 pr-1.5"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-hover text-muted-foreground">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <span className="min-w-0 max-w-[160px]">
+                  <span className="block truncate text-xs font-medium text-foreground">{f.name}</span>
+                  <span className="block text-[11px] text-text-secondary">{formatSize(f.size)}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  aria-label={`Remove ${f.name}`}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-hover hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
       <div className="flex items-end gap-2 rounded-2xl border border-border bg-surface-subtle px-2.5 py-2 transition-colors focus-within:border-border-strong">
+        {allowAttachments ? (
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            onChange={onFilesPicked}
+            className="hidden"
+          />
+        ) : null}
         <button
           type="button"
+          onClick={allowAttachments ? pickFiles : undefined}
           className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
           title="Add attachment"
         >
@@ -169,7 +235,12 @@ export function Composer({ placeholder = "Write a message…", onSend, onCommand
           <button type="button" className="hidden h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground sm:flex" title="Mention">
             <AtSign className="h-[17px] w-[17px]" />
           </button>
-          <button type="button" className="hidden h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground sm:flex" title="Attach file">
+          <button
+            type="button"
+            onClick={allowAttachments ? pickFiles : undefined}
+            className="hidden h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground sm:flex"
+            title="Attach file"
+          >
             <Paperclip className="h-[17px] w-[17px]" />
           </button>
           <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground" title="Emoji">
@@ -178,10 +249,10 @@ export function Composer({ placeholder = "Write a message…", onSend, onCommand
           <button
             type="button"
             onClick={submit}
-            disabled={!value.trim()}
+            disabled={!value.trim() && files.length === 0}
             className={cn(
               "ml-1 flex h-8 w-8 items-center justify-center rounded-full transition-colors",
-              value.trim()
+              value.trim() || files.length
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-surface-hover text-text-secondary",
             )}

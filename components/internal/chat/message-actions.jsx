@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { SmilePlus, Reply, Copy, Info } from "lucide-react";
+import { SmilePlus, Reply, Copy, Info, MessagesSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ function ActionButton({ label, icon: Icon, onClick }) {
 
 // Hover toolbar of per-message options: react (emoji picker), reply, copy, info.
 // Reveals on hover of the `group/msg` ancestor.
-export function MessageActions({ msg, isMe, onReact, onReply, onInfo }) {
+export function MessageActions({ msg, isMe, onReact, onReply, onInfo, onStartThread }) {
   const copy = () => {
     navigator.clipboard?.writeText(msg.text).catch(() => {});
     toast.success("Copied to clipboard");
@@ -68,6 +68,7 @@ export function MessageActions({ msg, isMe, onReact, onReply, onInfo }) {
       </DropdownMenu>
 
       {onReply ? <ActionButton label="Reply" icon={Reply} onClick={() => onReply(msg)} /> : null}
+      {onStartThread ? <ActionButton label="Start thread" icon={MessagesSquare} onClick={() => onStartThread(msg)} /> : null}
       <ActionButton label="Copy text" icon={Copy} onClick={copy} />
       {onInfo ? <ActionButton label="Info" icon={Info} onClick={() => onInfo(msg)} /> : null}
     </div>

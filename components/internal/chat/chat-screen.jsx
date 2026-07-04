@@ -21,6 +21,13 @@ import {
 import {
   listMessages, sendMessage, subscribeMessages, normalizeMessage, setMessageReactions,
 } from "@/lib/supabase/chat_messages";
+import {
+  listThreads, createThread, renameThread, softDeleteThread, subscribeThreads,
+} from "@/lib/supabase/chat_threads";
+import { listFilesByConversation } from "@/lib/supabase/chat_files";
+import { buildOptimisticAttachments, uploadAttachments, revokeOptimistic } from "@/lib/chat/attachments";
+
+const PAGE = 25;
 
 // Data-owning container shared by the Messages (dm) and Channels (channel)
 // screens. Fetches on mount, subscribes to realtime, and threads optimistic
@@ -50,15 +57,21 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState(null);
   const [ready, setReady] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false); // fetching an older page for the active conv
+  const [filesLoading, setFilesLoading] = useState(false); // fetching the Files panel for the active conv
   const [externalPending, setExternalPending] = useState(null); // person awaiting confirm
   const callApi = useCall();
 
   // Refs so realtime callbacks read current values without re-subscribing.
   const activeIdRef = useRef(null);
+  const itemsRef = useRef([]);
   const loadedConvs = useRef(new Set()); // conv ids with full messages loaded
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   // Initial load: identity -> directory -> #general bootstrap -> rows. Scoped to
   // this mount's org (fixed by the remount key on the wrapper).
@@ -118,10 +131,25 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
     });
   }, [kind, orgId]);
 
+  // Refresh a conversation's thread list (reply-count indicators + panel list).
+  const refreshThreadsFor = useCallback(async (convId) => {
+    if (!convId) return;
+    const threads = await listThreads(convId);
+    if (!threads) return;
+    setItems((prev) => prev.map((c) => (c.id === convId ? { ...c, threads } : c)));
+  }, []);
+
   // Realtime: a message inserted or updated (reaction / edit) somewhere.
   const onIncoming = useCallback((row, eventType) => {
     if (!row?.id) return;
     const convId = row.conversation_id;
+    // Thread replies never enter the main timeline. Just refresh the reply-count
+    // indicators for the active conversation; the open thread panel handles its
+    // own realtime for the messages themselves.
+    if (row.thread_id) {
+      if (eventType === "INSERT" && convId === activeIdRef.current) refreshThreadsFor(convId);
+      return;
+    }
     setItems((prev) => {
       const idx = prev.findIndex((c) => c.id === convId);
       if (idx === -1) return prev; // not one of my conversations (membership sub refetches)
@@ -151,7 +179,7 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
       return [updated, ...next];
     });
     if (eventType !== "UPDATE" && convId === activeIdRef.current && ME.id) markRead(convId, ME.id);
-  }, []);
+  }, [refreshThreadsFor]);
 
   // A profile changed somewhere (presence / display). Re-hydrate the directory
   // so getPerson() reads fresh values, and bump `people` to re-render the tree.
@@ -196,45 +224,115 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
     };
   }, [ready, orgId, onIncoming, refresh, onProfile, onRead]);
 
-  // Presence lifecycle: mark myself online while the chat is mounted and the tab
-  // is visible, away when hidden, and offline on leave. A heartbeat keeps
-  // last_seen_at fresh so staleness can be inferred if a tab dies abruptly.
+  // Realtime: threads created / renamed / deleted in the open conversation, so
+  // the panel list and reply-count indicators stay live for everyone.
+  useEffect(() => {
+    if (!activeId || !ME.id) return undefined;
+    const unsub = subscribeThreads(activeId, () => refreshThreadsFor(activeId));
+    return unsub;
+  }, [activeId, refreshThreadsFor]);
+
+  // Presence lifecycle: I'm "online" while this page is open (regardless of
+  // whether the tab is focused — a background tab is NOT away) and only "away"
+  // after real user inactivity. A 30s heartbeat keeps last_seen_at fresh; peers
+  // derive "offline" from a stale last_seen_at (see normalizeProfile), so we do
+  // NOT write offline on SPA navigation/unmount (which caused active users to
+  // flicker offline) — only best-effort on a real page unload.
   useEffect(() => {
     if (!ready || !ME.id) return undefined;
-    const sync = () => setPresence(ME.id, document.hidden ? "away" : "online");
-    sync();
-    const beat = setInterval(sync, 45000);
+    const IDLE_MS = 5 * 60 * 1000;
+    let lastActivity = Date.now();
+    const beat = () =>
+      setPresence(ME.id, Date.now() - lastActivity > IDLE_MS ? "away" : "online");
+    const onActivity = () => {
+      const wasIdle = Date.now() - lastActivity > IDLE_MS;
+      lastActivity = Date.now();
+      if (wasIdle) beat(); // returned from idle — flip back to online at once
+    };
+    beat();
+    const timer = setInterval(beat, 30000);
+    const activity = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"];
+    activity.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
     const onLeave = () => setPresence(ME.id, "offline");
-    document.addEventListener("visibilitychange", sync);
     window.addEventListener("beforeunload", onLeave);
     return () => {
-      clearInterval(beat);
-      document.removeEventListener("visibilitychange", sync);
+      clearInterval(timer);
+      activity.forEach((e) => window.removeEventListener(e, onActivity));
       window.removeEventListener("beforeunload", onLeave);
-      setPresence(ME.id, "offline");
     };
   }, [ready]);
+
+  // Presence reconciliation: realtime UPDATEs can be dropped, and "offline" is
+  // derived from a stale last_seen_at against the wall clock — so periodically
+  // re-fetch the directory to re-evaluate everyone's presence and pick up
+  // anything realtime missed.
+  useEffect(() => {
+    if (!ready || !ME.id || !orgId) return undefined;
+    const reconcile = async () => {
+      const profiles = await listProfiles(orgId);
+      if (!profiles) return;
+      hydratePeople(profiles);
+      setPeople(profiles.filter((p) => p.id !== ME.id));
+    };
+    const timer = setInterval(reconcile, 40000);
+    return () => clearInterval(timer);
+  }, [ready, orgId]);
 
   const handleSelect = useCallback(async (id) => {
     setActiveId(id);
     if (!loadedConvs.current.has(id)) {
-      const msgs = await listMessages(id);
+      const msgs = await listMessages(id, { limit: PAGE });
       loadedConvs.current.add(id);
-      if (msgs) setItems((prev) => prev.map((c) => (c.id === id ? { ...c, messages: msgs, unread: 0 } : c)));
+      if (msgs) {
+        setItems((prev) => prev.map((c) => (c.id === id ? { ...c, messages: msgs, hasMore: msgs.length === PAGE, unread: 0 } : c)));
+      }
     } else {
       setItems((prev) => prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)));
     }
+    refreshThreadsFor(id);
     if (ME.id) markRead(id, ME.id);
+  }, [refreshThreadsFor]);
+
+  // Infinite scroll: prepend the previous page of the active conversation.
+  const handleLoadOlder = useCallback(async (id) => {
+    if (!id) return;
+    const conv = itemsRef.current.find((c) => c.id === id);
+    const oldest = conv?.messages?.[0]?.createdAt;
+    if (!oldest) return;
+    setLoadingOlder(true);
+    const older = await listMessages(id, { before: oldest, limit: PAGE });
+    setLoadingOlder(false);
+    if (!older) return;
+    setItems((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const seen = new Set((c.messages || []).map((m) => m.id));
+        const fresh = older.filter((m) => !seen.has(m.id));
+        return { ...c, messages: [...fresh, ...(c.messages || [])], hasMore: older.length === PAGE };
+      }),
+    );
   }, []);
 
-  const handleSend = useCallback(async (text, replyTo) => {
+  // Load the Files panel for a conversation (lazy, on first open).
+  const handleLoadFiles = useCallback(async (id) => {
+    if (!id) return;
+    setFilesLoading(true);
+    const files = await listFilesByConversation(id);
+    setFilesLoading(false);
+    setItems((prev) => prev.map((c) => (c.id === id ? { ...c, files: files ?? [] } : c)));
+  }, []);
+
+  const handleSend = useCallback(async (text, replyTo, files = []) => {
     const id = activeIdRef.current;
     const clean = (text || "").trim();
-    if (!id || !clean || !ME.id) return;
+    if (!id || !ME.id) return;
+    if (!clean && files.length === 0) return;
     const msgId = crypto.randomUUID();
+    const optAtts = buildOptimisticAttachments(files);
     const optimistic = {
       id: msgId, authorId: ME.id, minsAgo: 0, text: clean,
       createdAt: new Date().toISOString(), reactions: {}, replyTo: replyTo || null,
+      attachments: optAtts,
     };
     setItems((prev) => {
       const idx = prev.findIndex((c) => c.id === id);
@@ -242,12 +340,72 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
       const conv = { ...prev[idx], messages: [...(prev[idx].messages || []), optimistic], lastActivity: 0 };
       return [conv, ...prev.filter((_, i) => i !== idx)];
     });
-    const saved = await sendMessage({ id: msgId, conversationId: id, authorId: ME.id, text: clean, replyTo });
+    const atts = files.length
+      ? await uploadAttachments(files, { conversationId: id, messageId: msgId, ownerId: ME.id, optimistic: optAtts })
+      : [];
+    if (files.length && atts.length < files.length) toast.error("Some files couldn't be uploaded.");
+    const saved = await sendMessage({ id: msgId, conversationId: id, authorId: ME.id, text: clean, replyTo, attachments: atts });
     if (!saved) {
       setItems((prev) => prev.map((c) => (c.id === id ? { ...c, messages: (c.messages || []).filter((m) => m.id !== msgId) } : c)));
       toast.error("Couldn't send the message.");
+    } else {
+      setItems((prev) => prev.map((c) => (c.id === id ? { ...c, messages: (c.messages || []).map((m) => (m.id === msgId ? saved : m)) } : c)));
     }
+    setTimeout(() => revokeOptimistic(optAtts), 10000);
   }, []);
+
+  // Thread CRUD (optimistic on the active conversation's threads list).
+  const handleCreateThread = useCallback(async (msg) => {
+    const id = activeIdRef.current;
+    if (!id || !ME.id || !msg?.id) return null;
+    const threadId = crypto.randomUUID();
+    const title = ((msg.text || msg.attachments?.[0]?.name || "Thread").trim().slice(0, 60)) || "Thread";
+    const optimistic = { id: threadId, conversationId: id, rootMessageId: msg.id, title, createdBy: ME.id, lastActivity: 0, replyCount: 0 };
+    setItems((prev) => prev.map((c) => (c.id === id ? { ...c, threads: [optimistic, ...(c.threads || [])] } : c)));
+    const created = await createThread({ id: threadId, conversationId: id, rootMessageId: msg.id, title, createdBy: ME.id });
+    if (!created) {
+      setItems((prev) => prev.map((c) => (c.id === id ? { ...c, threads: (c.threads || []).filter((t) => t.id !== threadId) } : c)));
+      toast.error("Couldn't create the thread.");
+      return null;
+    }
+    setItems((prev) => prev.map((c) => (c.id === id ? { ...c, threads: (c.threads || []).map((t) => (t.id === threadId ? created : t)) } : c)));
+    return created;
+  }, []);
+
+  const handleRenameThread = useCallback(async (threadId, title) => {
+    const id = activeIdRef.current;
+    let prevTitle = null;
+    setItems((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, threads: (c.threads || []).map((t) => { if (t.id === threadId) { prevTitle = t.title; return { ...t, title }; } return t; }) }
+          : c,
+      ),
+    );
+    const ok = await renameThread(threadId, title);
+    if (!ok) {
+      setItems((prev) => prev.map((c) => (c.id === id ? { ...c, threads: (c.threads || []).map((t) => (t.id === threadId ? { ...t, title: prevTitle } : t)) } : c)));
+    }
+    return ok;
+  }, []);
+
+  const handleDeleteThread = useCallback(async (thread) => {
+    const id = activeIdRef.current;
+    const threadId = thread?.id;
+    if (!threadId) return false;
+    const snapshot = itemsRef.current.find((c) => c.id === id)?.threads || [];
+    setItems((prev) => prev.map((c) => (c.id === id ? { ...c, threads: (c.threads || []).filter((t) => t.id !== threadId) } : c)));
+    const ok = await softDeleteThread(threadId);
+    if (!ok) {
+      setItems((prev) => prev.map((c) => (c.id === id ? { ...c, threads: snapshot } : c)));
+      toast.error("Couldn't delete the thread.");
+    } else {
+      toast.success("Thread deleted");
+    }
+    return ok;
+  }, []);
+
+  const handleRefreshThreads = useCallback(() => refreshThreadsFor(activeIdRef.current), [refreshThreadsFor]);
 
   // Toggle my reaction on a message (optimistic + persisted via merge RPC).
   // `msg` carries the current reactions snapshot from render.
@@ -310,12 +468,13 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
     setItems((prev) => (prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev]));
     setActiveId(conv.id);
     if (!loadedConvs.current.has(conv.id)) {
-      const msgs = await listMessages(conv.id);
+      const msgs = await listMessages(conv.id, { limit: PAGE });
       loadedConvs.current.add(conv.id);
-      if (msgs) setItems((prev) => prev.map((c) => (c.id === conv.id ? { ...c, messages: msgs } : c)));
+      if (msgs) setItems((prev) => prev.map((c) => (c.id === conv.id ? { ...c, messages: msgs, hasMore: msgs.length === PAGE } : c)));
     }
+    refreshThreadsFor(conv.id);
     if (ME.id) markRead(conv.id, ME.id);
-  }, [orgId]);
+  }, [orgId, refreshThreadsFor]);
 
   const handleStartDm = useCallback(async (personOrQuery) => {
     if (!ME.id) {
@@ -429,6 +588,14 @@ function ChatScreenInner({ title, variant, orgId, orgLoading }) {
         onPin={handlePin}
         onMarkRead={handleMarkRead}
         onLeave={handleLeave}
+        onLoadOlder={handleLoadOlder}
+        loadingOlder={loadingOlder}
+        onLoadFiles={handleLoadFiles}
+        filesLoading={filesLoading}
+        onCreateThread={handleCreateThread}
+        onRenameThread={handleRenameThread}
+        onDeleteThread={handleDeleteThread}
+        onRefreshThreads={handleRefreshThreads}
       />
       {inCall ? (
         <CallStage
